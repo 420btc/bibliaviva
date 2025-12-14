@@ -8,6 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, Sparkles, BookOpen, Lightbulb, Heart, RefreshCw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { chatWithBibleAI } from "@/lib/openai-actions"
+import { toast } from "sonner"
 
 interface Message {
   id: string
@@ -38,7 +40,7 @@ export function AIChat() {
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return
 
     const userMessage: Message = {
@@ -48,43 +50,33 @@ export function AIChat() {
       timestamp: new Date(),
     }
 
-    setMessages((prev) => [...prev, userMessage])
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
     setInput("")
     setIsTyping(true)
 
-    // Simular respuesta de IA
-    setTimeout(() => {
+    try {
+      // Convertir mensajes al formato de OpenAI
+      const apiMessages = newMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+
+      const response = await chatWithBibleAI(apiMessages)
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: getAIResponse(text),
+        content: response,
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, aiResponse])
+    } catch (error) {
+      console.error(error)
+      toast.error("Hubo un error al conectar con el asistente.")
+    } finally {
       setIsTyping(false)
-    }, 1500)
-  }
-
-  const getAIResponse = (question: string): string => {
-    const lowerQ = question.toLowerCase()
-
-    if (lowerQ.includes("juan 3:16") || lowerQ.includes("juan 3 16")) {
-      return `**Juan 3:16** es uno de los versículos más conocidos de la Biblia:\n\n> "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna."\n\n**Significado profundo:**\n\n1. **"De tal manera amó Dios"** - El amor de Dios es inmenso e incondicional\n2. **"al mundo"** - Incluye a toda la humanidad, sin excepción\n3. **"ha dado a su Hijo"** - El mayor sacrificio posible\n4. **"todo aquel que en él cree"** - La salvación está disponible para todos\n5. **"vida eterna"** - No solo duración, sino calidad de vida con Dios\n\n¿Te gustaría explorar más sobre este pasaje o tienes alguna pregunta específica?`
     }
-
-    if (lowerQ.includes("nacer de nuevo")) {
-      return `**Nacer de nuevo** es un concepto central en Juan 3, donde Jesús habla con Nicodemo.\n\n**¿Qué significa?**\n\nNo se refiere a un nacimiento físico, sino a una transformación espiritual:\n\n1. **Regeneración espiritual** - Un nuevo comienzo en tu relación con Dios\n2. **El Espíritu Santo** - Es obra del Espíritu, no del esfuerzo humano\n3. **Nueva identidad** - Convertirse en hijo de Dios (Juan 1:12-13)\n\n**Versículo clave:**\n> "Lo que es nacido de la carne, carne es; y lo que es nacido del Espíritu, espíritu es." (Juan 3:6)\n\n¿Quieres que profundicemos más en este tema?`
-    }
-
-    if (lowerQ.includes("fe") || lowerQ.includes("fortalecer")) {
-      return `**Fortalecer tu fe** es un proceso continuo. Aquí hay algunas prácticas bíblicas:\n\n1. **Lectura diaria de la Palabra**\n   > "La fe viene por el oír, y el oír por la palabra de Dios" (Romanos 10:17)\n\n2. **Oración constante**\n   > "Orad sin cesar" (1 Tesalonicenses 5:17)\n\n3. **Comunidad de creyentes**\n   > "No dejando de congregarnos" (Hebreos 10:25)\n\n4. **Practicar lo aprendido**\n   > "Sed hacedores de la palabra" (Santiago 1:22)\n\n5. **Confiar en las pruebas**\n   > "La prueba de vuestra fe produce paciencia" (Santiago 1:3)\n\n¿Te gustaría un plan de lectura específico para fortalecer tu fe?`
-    }
-
-    if (lowerQ.includes("devocional")) {
-      return `**Devocional del día**\n\n📖 **Versículo:** Filipenses 4:13\n> "Todo lo puedo en Cristo que me fortalece."\n\n**Reflexión:**\n\nEste versículo no promete que podemos hacer literalmente todo, sino que en **cualquier circunstancia** —abundancia o escasez, alegría o tristeza— podemos encontrar fortaleza en Cristo.\n\n**Aplicación para hoy:**\n\n1. ¿Qué desafío enfrentas hoy?\n2. ¿Estás intentando superarlo con tus propias fuerzas?\n3. Invita a Cristo a ser tu fortaleza\n\n**Oración sugerida:**\n\n*"Señor, reconozco que sin ti nada puedo hacer. Dame tu fortaleza para enfrentar este día. Amén."*\n\n¿Te gustaría explorar otro tema para tu meditación?`
-    }
-
-    return `Gracias por tu pregunta. Basándome en las Escrituras, puedo ayudarte a explorar este tema.\n\nTe sugiero comenzar leyendo algunos pasajes relacionados y reflexionando en oración. ¿Hay algún aspecto específico en el que te gustaría profundizar?\n\nTambién puedo:\n- Darte referencias bíblicas relacionadas\n- Explicar el contexto histórico\n- Sugerir un plan de estudio\n\n¿Qué te gustaría explorar?`
   }
 
   return (
