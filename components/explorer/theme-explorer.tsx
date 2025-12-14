@@ -60,9 +60,9 @@ const createInitialNodes = (width: number, height: number): Node[] => {
   })
 
   // Agregar personajes
-  // Incluimos más personajes para asegurar que Salomón (índice 7) aparezca para la conexión de Sabiduría
-  characters.slice(0, 8).forEach((char, i) => {
-    const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
+  // Incluimos todos los personajes
+  characters.forEach((char, i) => {
+    const angle = (i / characters.length) * Math.PI * 2 + Math.PI / 8
     const radius = minDim * 0.2 // 20% del tamaño menor
     nodes.push({
       id: `char-${char.id}`,
@@ -93,6 +93,10 @@ const createConnections = (): Connection[] => {
     { source: "char-jesus", target: "theme-paz" },
     { source: "char-moises", target: "theme-fe" },
     { source: "char-david", target: "theme-amor" },
+    // Conexiones de María
+    { source: "char-maria", target: "theme-fe" },
+    { source: "char-maria", target: "theme-gracia" },
+    { source: "char-maria", target: "char-jesus" },
   ]
 }
 
@@ -288,6 +292,7 @@ export function ThemeExplorer() {
   }
 
   const filteredThemes = themes.filter((t) => t.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredCharacters = characters.filter((c) => c.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
 
   const getSelectedData = () => {
     if (!selectedNode) return null
@@ -396,7 +401,7 @@ export function ThemeExplorer() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Lista de temas */}
-        <div className="w-64 border-r border-border p-4 hidden lg:block">
+        <div className="w-64 border-r border-border p-4 hidden lg:block overflow-y-auto">
           <h3 className="font-semibold text-foreground mb-3">Temas</h3>
           <div className="space-y-2">
             {filteredThemes.map((theme) => (
@@ -419,7 +424,7 @@ export function ThemeExplorer() {
 
           <h3 className="font-semibold text-foreground mb-3 mt-6">Personajes</h3>
           <div className="space-y-2">
-            {characters.slice(0, 8).map((char) => (
+            {filteredCharacters.map((char) => (
               <button
                 key={char.id}
                 onClick={() => {
