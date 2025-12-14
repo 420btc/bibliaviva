@@ -28,15 +28,16 @@ interface Connection {
 }
 
 // Crear nodos iniciales
-const createInitialNodes = (): Node[] => {
+const createInitialNodes = (width: number, height: number): Node[] => {
   const nodes: Node[] = []
-  const centerX = 400
-  const centerY = 300
+  const centerX = width / 2
+  const centerY = height / 2
+  const minDim = Math.min(width, height)
 
   // Agregar temas
   themes.forEach((theme, i) => {
     const angle = (i / themes.length) * Math.PI * 2
-    const radius = 200
+    const radius = minDim * 0.35 // 35% del tamaño menor
     nodes.push({
       id: `theme-${theme.id}`,
       type: "theme",
@@ -51,9 +52,10 @@ const createInitialNodes = (): Node[] => {
   })
 
   // Agregar personajes
-  characters.slice(0, 6).forEach((char, i) => {
-    const angle = (i / 6) * Math.PI * 2 + Math.PI / 8
-    const radius = 120
+  // Incluimos más personajes para asegurar que Salomón (índice 7) aparezca para la conexión de Sabiduría
+  characters.slice(0, 8).forEach((char, i) => {
+    const angle = (i / 8) * Math.PI * 2 + Math.PI / 8
+    const radius = minDim * 0.2 // 20% del tamaño menor
     nodes.push({
       id: `char-${char.id}`,
       type: "character",
@@ -87,6 +89,7 @@ const createConnections = (): Connection[] => {
 }
 
 export function ThemeExplorer() {
+  const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   // Usamos ref para la animación fluida sin re-renders constantes
   const nodesRef = useRef<Node[]>([])
@@ -97,68 +100,104 @@ export function ThemeExplorer() {
   const [zoom, setZoom] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const animationRef = useRef<number | null>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  // Manejar redimensionamiento
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current
+        setDimensions({ width: clientWidth, height: clientHeight })
+      }
+    }
+
+    window.addEventListener('resize', updateSize)
+    updateSize()
+
+    return () => window.removeEventListener('resize', updateSize)
+  }, [])
   
   // Inicialización única
   useEffect(() => {
-    if (!initializedRef.current) {
-      nodesRef.current = createInitialNodes()
+    if (!initializedRef.current && dimensions.width > 0) {
+      nodesRef.current = createInitialNodes(dimensions.width, dimensions.height)
       initializedRef.current = true
     }
-  }, [])
+  }, [dimensions])
 
   const [connections] = useState<Connection[]>(createConnections)
 
   // Simulación de física simplificada (trabaja directamente sobre refs)
   const updatePhysics = useCallback(() => {
     const nodes = nodesRef.current
+    const width = dimensions.width
+    const height = dimensions.height
     
+    if (width === 0 || height === 0) return
+
     // Aplicar fuerzas
     nodes.forEach((node, i) => {
-      // Repulsión entre nodos
+      // Repulsión entre nodos (AUMENTADA para más separación)
       nodes.forEach((other, j) => {
         if (i === j) return
         const dx = node.x - other.x
         const dy = node.y - other.y
         const dist = Math.sqrt(dx * dx + dy * dy) || 1
-        const force = 1000 / (dist * dist)
-        node.vx += (dx / dist) * force * 0.01
-        node.vy += (dy / dist) * force * 0.01
+        
+        // Mucho más fuerza de repulsión y radio de efecto
+        const force = 50000 / (dist * dist) 
+        node.vx += (dx / dist) * force * 0.05
+        node.vy += (dy / dist) * force * 0.05
       })
 
-      // Atracción al centro
-      const centerX = 400
-      const centerY = 300
-      node.vx += (centerX - node.x) * 0.0001
-      node.vy += (centerY - node.y) * 0.0001
+      // Atracción al centro (suave)
+      const centerX = width / 2
+      const centerY = height / 2
+      node.vx += (centerX - node.x) * 0.0005
+      node.vy += (centerY - node.y) * 0.0005
 
       // Fricción
-      node.vx *= 0.95
-      node.vy *= 0.95
+      node.vx *= 0.92 // Un poco más de fricción para estabilidad
+      node.vy *= 0.92
 
       // Actualizar posición
       node.x += node.vx
       node.y += node.vy
 
-      // Límites
-      node.x = Math.max(50, Math.min(750, node.x))
-      node.y = Math.max(50, Math.min(550, node.y))
+      // Límites dinámicos con margen
+      const margin = 50
+      node.x = Math.max(margin, Math.min(width - margin, node.x))
+      node.y = Math.max(margin, Math.min(height - margin, node.y))
     })
-  }, [])
+  }, [dimensions])
 
   // Dibujar en canvas
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas || dimensions.width === 0) return
 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    // Ajustar resolución para pantallas retina/HiDPI
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = dimensions.width * dpr
+    canvas.height = dimensions.height * dpr
+    
+    // Necesario para que el CSS lo muestre al tamaño correcto
+    canvas.style.width = `${dimensions.width}px`
+    canvas.style.height = `${dimensions.height}px`
+
     const draw = () => {
+      // Reset transform y clear con el tamaño real en pixels
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Aplicar zoom
-      ctx.save()
-      ctx.scale(zoom, zoom)
+      // Escalar todo por DPR y Zoom
+      ctx.scale(dpr * zoom, dpr * zoom)
+      
+      // Ajustar centro del zoom (opcional, por ahora simple scale)
+      // Para centrar el zoom, necesitaríamos trasladar el canvas antes de escalar
 
       const nodes = nodesRef.current
 
@@ -298,7 +337,7 @@ export function ThemeExplorer() {
 
           <h3 className="font-semibold text-foreground mb-3 mt-6">Personajes</h3>
           <div className="space-y-2">
-            {characters.slice(0, 6).map((char) => (
+            {characters.slice(0, 8).map((char) => (
               <button
                 key={char.id}
                 onClick={() => {
@@ -318,14 +357,11 @@ export function ThemeExplorer() {
         </div>
 
         {/* Canvas del grafo */}
-        <div className="flex-1 relative bg-background">
+        <div className="flex-1 relative bg-background" ref={containerRef}>
           <canvas
             ref={canvasRef}
-            width={800}
-            height={600}
             onClick={handleCanvasClick}
-            className="w-full h-full cursor-pointer"
-            style={{ maxHeight: "calc(100vh - 200px)" }}
+            className="w-full h-full cursor-pointer touch-none"
           />
 
           {/* Panel de detalles */}
