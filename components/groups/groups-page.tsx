@@ -8,8 +8,20 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Users, Plus, MessageCircle, BookOpen, Search, Crown, Send } from "lucide-react"
 import { motion } from "framer-motion"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { toast } from "sonner"
 
-const grupos = [
+const initialGrupos = [
   {
     id: "1",
     nombre: "Jóvenes en Cristo",
@@ -71,11 +83,46 @@ const mensajesGrupo = [
 ]
 
 export function GroupsPage() {
+  const [grupos, setGrupos] = useState(initialGrupos)
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   const [chatMessage, setChatMessage] = useState("")
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
+  
+  // Form states
+  const [newGroupName, setNewGroupName] = useState("")
+  const [newGroupDesc, setNewGroupDesc] = useState("")
+  const [newGroupReading, setNewGroupReading] = useState("")
 
   const grupo = grupos.find((g) => g.id === selectedGroup)
   
+  const handleCreateGroup = () => {
+    if (!newGroupName || !newGroupDesc) {
+      toast.error("Por favor completa el nombre y la descripción")
+      return
+    }
+
+    const newGroup = {
+      id: Date.now().toString(),
+      nombre: newGroupName,
+      miembros: 1,
+      descripcion: newGroupDesc,
+      activo: true,
+      ultimaActividad: "Ahora mismo",
+      lecturaActual: newGroupReading || "Génesis 1",
+    }
+
+    setGrupos([newGroup, ...grupos])
+    setSelectedGroup(newGroup.id)
+    setIsCreateGroupOpen(false)
+    
+    // Reset form
+    setNewGroupName("")
+    setNewGroupDesc("")
+    setNewGroupReading("")
+    
+    toast.success("¡Grupo creado exitosamente!")
+  }
+
   // Mensajes de chat más dinámicos y realistas
   const renderMessageBubble = (msg: typeof mensajesGrupo[0]) => {
     const isMe = msg.usuario === "Tú" // Placeholder para usuario actual si lo hubiera
@@ -122,9 +169,54 @@ export function GroupsPage() {
         <div className="p-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-foreground">Grupos de Estudio</h1>
-            <Button size="icon" className="gradient-primary border-0">
-              <Plus className="w-5 h-5" />
-            </Button>
+            <Dialog open={isCreateGroupOpen} onOpenChange={setIsCreateGroupOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" className="gradient-primary border-0">
+                  <Plus className="w-5 h-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Crear nuevo grupo</DialogTitle>
+                  <DialogDescription>
+                    Crea un espacio para estudiar la Biblia junto a otros hermanos.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Nombre del grupo</Label>
+                    <Input
+                      id="name"
+                      placeholder="Ej: Jóvenes de Valor"
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Descripción</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="¿Cuál es el propósito de este grupo?"
+                      value={newGroupDesc}
+                      onChange={(e) => setNewGroupDesc(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="reading">Lectura inicial (Opcional)</Label>
+                    <Input
+                      id="reading"
+                      placeholder="Ej: Salmos 1"
+                      value={newGroupReading}
+                      onChange={(e) => setNewGroupReading(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCreateGroupOpen(false)}>Cancelar</Button>
+                  <Button className="gradient-primary border-0" onClick={handleCreateGroup}>Crear Grupo</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

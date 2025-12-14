@@ -37,7 +37,7 @@ const fetcher = async ([bookId, chapter]: [string, number]): Promise<ChapterResp
 }
 
 export function BibleReader() {
-  const [selectedBook, setSelectedBook] = useState<BibleBookLocal>(bibleBooks.nuevoTestamento[3]) // Juan por defecto
+  const [selectedBook, setSelectedBook] = useState<BibleBookLocal>(bibleBooks.antiguoTestamento[0]) // Génesis por defecto
   const [selectedChapter, setSelectedChapter] = useState(1)
   const [selectedVerses, setSelectedVerses] = useState<number[]>([])
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
