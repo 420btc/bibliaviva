@@ -28,14 +28,14 @@ import { useState } from "react"
 
 const navItems = [
   { href: "/", icon: Home, label: "Inicio" },
-  { href: "/biblia", icon: Book, label: "Biblia" },
-  { href: "/planes", icon: CalendarRange, label: "Planes" },
-  { href: "/chat", icon: MessageCircle, label: "Chat IA" },
-  { href: "/oraciones", icon: Heart, label: "Oraciones" },
-  { href: "/notas", icon: StickyNote, label: "Mis Notas" },
-  { href: "/explorador", icon: Network, label: "Explorador" },
   { href: "/viaje", icon: Trophy, label: "Mi Viaje" },
+  { href: "/biblia", icon: Book, label: "Biblia" },
+  { href: "/oraciones", icon: Heart, label: "Oraciones" },
+  { href: "/explorador", icon: Network, label: "Explorador" },
   { href: "/grupos", icon: Users, label: "Comunidad" },
+  { href: "/chat", icon: MessageCircle, label: "Chat IA" },
+  { href: "/planes", icon: CalendarRange, label: "Planes" },
+  { href: "/notas", icon: StickyNote, label: "Mis Notas" },
 ]
 
 export function Sidebar() {
