@@ -3,11 +3,21 @@
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { desafiosDiarios } from "@/lib/gamification"
+import { useUserProgress } from "@/hooks/use-user-progress"
 import { CheckCircle2, Circle, Zap } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 
 export function DailyChallenges() {
+  const { progress } = useUserProgress()
+  
+  const desafios = desafiosDiarios.map(d => ({
+    ...d,
+    completado: progress.desafiosDiariosCompletados?.includes(d.id)
+  }))
+
+  const completados = desafios.filter(d => d.completado).length
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -16,10 +26,10 @@ export function DailyChallenges() {
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-foreground">Desafíos del Día</h2>
-        <span className="text-sm text-muted-foreground">1/4 completados</span>
+        <span className="text-sm text-muted-foreground">{completados}/{desafios.length} completados</span>
       </div>
       <Card className="glass-card divide-y divide-border">
-        {desafiosDiarios.map((desafio, index) => (
+        {desafios.map((desafio, index) => (
           <motion.div
             key={desafio.id}
             initial={{ opacity: 0, x: -20 }}

@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
+import { useUserProgress } from "@/hooks/use-user-progress"
 
 const highlightColors = [
   { name: "Amarillo", class: "bg-yellow-500/30", color: "#eab308" },
@@ -42,6 +43,8 @@ export function BibleReader() {
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
   const [showBookSelector, setShowBookSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  
+  const { addXP, completeChallenge } = useUserProgress()
 
   const filteredBooks = useMemo(() => {
     if (!searchQuery) {
@@ -70,6 +73,17 @@ export function BibleReader() {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   })
+
+  // Track reading progress
+  useEffect(() => {
+    if (chapterData && !isLoading) {
+      const timer = setTimeout(() => {
+        completeChallenge('lectura-diaria', 20)
+        addXP(5) // XP extra por tiempo de lectura
+      }, 10000) // 10 segundos para probar (idealmente más tiempo)
+      return () => clearTimeout(timer)
+    }
+  }, [chapterData, isLoading])
 
   // Manejar selección de versículos
   const toggleVerseSelection = (verseNum: number) => {

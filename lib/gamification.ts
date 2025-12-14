@@ -12,6 +12,8 @@ export interface UserProgress {
   quizzesCompletados: number
   insignias: string[]
   titulo: string
+  desafiosDiariosCompletados: string[]
+  fechaUltimoDesafio: string
 }
 
 export const niveles = [
@@ -145,4 +147,6 @@ export const defaultUserProgress: UserProgress = {
   quizzesCompletados: 8,
   insignias: ["primera-lectura", "racha-7", "explorador-nt"],
   titulo: "Buscador de Sabiduría",
+  desafiosDiariosCompletados: [],
+  fechaUltimoDesafio: new Date().toISOString().split('T')[0],
 }

@@ -8,6 +8,7 @@ import { Share2, Bookmark, Volume2, Sparkles, Loader2, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { generateVerseImage, generateVerseAudio } from "@/lib/openai-actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useUserProgress } from "@/hooks/use-user-progress"
 
 export function VerseOfDay() {
   const [verse, setVerse] = useState(dailyVerses[0])
@@ -15,6 +16,8 @@ export function VerseOfDay() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  
+  const { addXP } = useUserProgress()
 
   useEffect(() => {
     const today = new Date().getDate()
@@ -36,6 +39,7 @@ export function VerseOfDay() {
         const { audio } = await generateVerseAudio(`${verse.libro} ${verse.capitulo} versículo ${verse.versiculo}. ${verse.texto}`)
         const url = `data:audio/mp3;base64,${audio}`
         setAudioUrl(url)
+        addXP(5)
         
         // Reproducir automáticamente
         setTimeout(() => {
@@ -61,6 +65,7 @@ export function VerseOfDay() {
       setIsGeneratingImage(true)
       const { url } = await generateVerseImage(`${verse.texto} (${verse.libro} ${verse.capitulo}:${verse.versiculo})`)
       setGeneratedImage(url || null)
+      addXP(15)
     } catch (error) {
       console.error(error)
     } finally {

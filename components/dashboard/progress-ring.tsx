@@ -1,12 +1,13 @@
 "use client"
 
 import { Card } from "@/components/ui/card"
-import { defaultUserProgress, calcularNivel } from "@/lib/gamification"
+import { calcularNivel } from "@/lib/gamification"
+import { useUserProgress } from "@/hooks/use-user-progress"
 import { Flame, Trophy, BookOpen, Target } from "lucide-react"
 import { motion } from "framer-motion"
 
 export function ProgressRing() {
-  const user = defaultUserProgress
+  const { progress: user } = useUserProgress()
   const nivelInfo = calcularNivel(user.xp)
 
   return (

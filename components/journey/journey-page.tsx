@@ -5,9 +5,10 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { insignias, desafiosSemanales, defaultUserProgress, niveles } from "@/lib/gamification"
+import { insignias, desafiosSemanales, niveles } from "@/lib/gamification"
 import { Trophy, Flame, Star, Target, Lock, CheckCircle2, ChevronRight, Zap, Medal } from "lucide-react"
 import { motion } from "framer-motion"
+import { useUserProgress } from "@/hooks/use-user-progress"
 
 const quizQuestions = [
   {
@@ -37,19 +38,23 @@ export function JourneyPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showResult, setShowResult] = useState(false)
 
-  const user = defaultUserProgress
+  const { progress: user, addXP } = useUserProgress()
 
   const handleAnswer = (index: number) => {
     setSelectedAnswer(index)
     setTimeout(() => {
       if (index === quizQuestions[currentQuestion].respuestaCorrecta) {
         setScore((s) => s + 1)
+        addXP(10) // XP por respuesta correcta
       }
       if (currentQuestion < quizQuestions.length - 1) {
         setCurrentQuestion((q) => q + 1)
         setSelectedAnswer(null)
       } else {
         setShowResult(true)
+        if (score + (index === quizQuestions[currentQuestion].respuestaCorrecta ? 1 : 0) === quizQuestions.length) {
+          addXP(50) // Bonus por completar perfecto
+        }
       }
     }, 1000)
   }
