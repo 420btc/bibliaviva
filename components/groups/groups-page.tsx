@@ -51,36 +51,77 @@ const initialGrupos = [
   },
 ]
 
-const mensajesGrupo = [
-  {
-    id: "1",
-    usuario: "María",
-    mensaje: "¡Buenos días! ¿Qué les pareció la lectura de ayer?",
-    hora: "9:30 AM",
-    avatar: "M",
-  },
-  {
-    id: "2",
-    usuario: "Carlos",
-    mensaje: "Muy interesante el versículo 28. Me hizo reflexionar mucho.",
-    hora: "9:45 AM",
-    avatar: "C",
-  },
-  {
-    id: "3",
-    usuario: "Ana",
-    mensaje: "Sí, especialmente la parte sobre ser más que vencedores. ¡Qué promesa!",
-    hora: "10:02 AM",
-    avatar: "A",
-  },
-  {
-    id: "4",
-    usuario: "Pedro",
-    mensaje: 'Les comparto mi nota: "Nada nos puede separar del amor de Dios" - esto me da paz en tiempos difíciles.',
-    hora: "10:15 AM",
-    avatar: "P",
-  },
-]
+const mensajesPorGrupo = {
+  "1": [
+    {
+      id: "1",
+      usuario: "María",
+      mensaje: "¡Buenos días! ¿Qué les pareció la lectura de ayer?",
+      hora: "9:30 AM",
+      avatar: "M",
+    },
+    {
+      id: "2",
+      usuario: "Carlos",
+      mensaje: "Muy interesante el versículo 28. Me hizo reflexionar mucho.",
+      hora: "9:45 AM",
+      avatar: "C",
+    },
+    {
+      id: "3",
+      usuario: "Ana",
+      mensaje: "Sí, especialmente la parte sobre ser más que vencedores. ¡Qué promesa!",
+      hora: "10:02 AM",
+      avatar: "A",
+    },
+    {
+      id: "4",
+      usuario: "Pedro",
+      mensaje: 'Les comparto mi nota: "Nada nos puede separar del amor de Dios" - esto me da paz en tiempos difíciles.',
+      hora: "10:15 AM",
+      avatar: "P",
+    },
+  ],
+  "2": [
+    {
+      id: "1",
+      usuario: "Sara",
+      mensaje: "La valentía de Ester es impresionante. 'Si perezco, que perezca'.",
+      hora: "8:15 AM",
+      avatar: "S",
+    },
+    {
+      id: "2",
+      usuario: "Rebeca",
+      mensaje: "¿Alguna ha ayunado como lo hizo Ester?",
+      hora: "8:30 AM",
+      avatar: "R",
+    },
+    {
+      id: "3",
+      usuario: "Lucía",
+      mensaje: "Yo lo hice el año pasado. Fue una experiencia muy fuerte espiritualmente.",
+      hora: "9:00 AM",
+      avatar: "L",
+    },
+  ],
+  "3": [
+    {
+      id: "1",
+      usuario: "David",
+      mensaje: "Efesios 5:25 es un reto diario para nosotros los esposos.",
+      hora: "Yesterday",
+      avatar: "D",
+    },
+    {
+      id: "2",
+      usuario: "Marta",
+      mensaje: "Y el respeto mutuo es clave. Estamos leyendo juntos cada noche.",
+      hora: "Yesterday",
+      avatar: "M",
+    },
+  ],
+}
 
 export function GroupsPage() {
   const [grupos, setGrupos] = useState(initialGrupos)
@@ -124,7 +165,7 @@ export function GroupsPage() {
   }
 
   // Mensajes de chat más dinámicos y realistas
-  const renderMessageBubble = (msg: typeof mensajesGrupo[0]) => {
+  const renderMessageBubble = (msg: typeof mensajesPorGrupo["1"][0]) => {
     const isMe = msg.usuario === "Tú" // Placeholder para usuario actual si lo hubiera
     return (
       <motion.div
@@ -317,7 +358,14 @@ export function GroupsPage() {
               </div>
 
               {/* Mensajes */}
-              {mensajesGrupo.map(renderMessageBubble)}
+              {selectedGroup && mensajesPorGrupo[selectedGroup as keyof typeof mensajesPorGrupo] ? (
+                mensajesPorGrupo[selectedGroup as keyof typeof mensajesPorGrupo].map(renderMessageBubble)
+              ) : (
+                <div className="text-center text-muted-foreground py-10">
+                  <p>No hay mensajes aún en este grupo.</p>
+                  <p className="text-sm">¡Sé el primero en escribir!</p>
+                </div>
+              )}
 
               {/* Nota compartida */}
               <motion.div 
