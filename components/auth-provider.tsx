@@ -4,6 +4,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from "react
 import { useRouter } from "next/navigation"
 import { loginOrRegisterAction, syncUserAction } from "@/actions/auth"
 import { toast } from "sonner"
+import { safeLocalStorage } from "@/lib/safe-storage"
 
 interface User {
   id: string
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const savedUser = localStorage.getItem("biblia-viva-user")
+      const savedUser = safeLocalStorage.getItem("biblia-viva-user")
       if (savedUser) {
         try {
           const parsedUser = JSON.parse(savedUser)
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           )
         } catch (e) {
           console.error("Error parsing user data", e)
-          localStorage.removeItem("biblia-viva-user")
+          safeLocalStorage.removeItem("biblia-viva-user")
         }
       }
       setIsLoading(false)
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (result.success && result.user) {
             setUser(result.user)
             setIsAuthenticated(true)
-            localStorage.setItem("biblia-viva-user", JSON.stringify(result.user))
+            safeLocalStorage.setItem("biblia-viva-user", JSON.stringify(result.user))
             router.push("/")
             
             // Check if user is returning (created_at is older than a minute maybe, or just logic)
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     setIsAuthenticated(false)
-    localStorage.removeItem("biblia-viva-user")
+    safeLocalStorage.removeItem("biblia-viva-user")
     // Opcional: Limpiar otros datos locales si es deseado para seguridad completa en dispositivos compartidos
     // localStorage.clear() 
     router.push("/login")

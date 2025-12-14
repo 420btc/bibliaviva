@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Cookie, Shield, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { safeLocalStorage } from "@/lib/safe-storage"
 
 export function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     // Verificar si ya existe una decisión guardada
-    const consent = localStorage.getItem("biblia-viva-cookie-consent")
+    const consent = safeLocalStorage.getItem("biblia-viva-cookie-consent")
     if (!consent) {
       // Pequeño retraso para que no sea intrusivo inmediatamente al cargar
       const timer = setTimeout(() => setIsVisible(true), 1000)
@@ -19,33 +20,13 @@ export function CookieBanner() {
     }
   }, [])
 
-  const safeSetItem = (key: string, value: string) => {
-    try {
-        localStorage.setItem(key, value)
-    } catch (e) {
-        console.warn("Storage quota exceeded, attempting cleanup...", e)
-        try {
-            // Limpiar claves antiguas o cachés grandes
-            Object.keys(localStorage).forEach(k => {
-                if (k.startsWith('audio-cache-') || k.includes('verse')) {
-                    localStorage.removeItem(k)
-                }
-            })
-            // Reintentar
-            localStorage.setItem(key, value)
-        } catch (retryError) {
-            console.error("Failed to save cookie consent even after cleanup", retryError)
-        }
-    }
-  }
-
   const handleAccept = () => {
-    safeSetItem("biblia-viva-cookie-consent", "accepted")
+    safeLocalStorage.setItem("biblia-viva-cookie-consent", "accepted")
     setIsVisible(false)
   }
 
   const handleReject = () => {
-    safeSetItem("biblia-viva-cookie-consent", "rejected")
+    safeLocalStorage.setItem("biblia-viva-cookie-consent", "rejected")
     setIsVisible(false)
   }
 
