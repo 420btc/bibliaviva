@@ -20,9 +20,9 @@ export function getCurrentSeason(): SeasonConfig {
   if ((month === 12 && day >= 15) || (month === 1 && day <= 6)) {
     return {
       id: 'christmas',
-      name: 'Navidad',
+      name: 'Natividad',
       emoji: '🎄',
-      greeting: '¡Feliz Navidad y Próspero Año!',
+      greeting: '¡Feliz Natividad del Señor!',
       colors: { r: 0.8, g: 0.1, b: 0.1 },
       accentColor: 'text-red-500',
       icon: 'Gift'
