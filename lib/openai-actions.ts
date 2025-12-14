@@ -26,11 +26,11 @@ export async function generateVerseImage(verseText: string) {
   }
 }
 
-export async function generateVerseAudio(verseText: string) {
+export async function generateVerseAudio(verseText: string, voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "onyx") {
   try {
     const mp3 = await openai.audio.speech.create({
       model: "tts-1",
-      voice: "onyx",
+      voice: voice,
       input: verseText,
     })
 

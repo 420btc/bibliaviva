@@ -19,13 +19,16 @@ import {
   Volume2,
   Menu,
   Columns,
-  ScrollText
+  ScrollText,
+  Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUserProgress } from "@/hooks/use-user-progress"
 import { useSettings } from "@/components/settings-provider"
 import { useSearchParams } from "next/navigation"
+import { generateVerseAudio } from "@/lib/openai-actions"
+import { toast } from "sonner"
 
 const highlightColors = [
   { name: "Amarillo", class: "bg-yellow-500/30", color: "#eab308" },
@@ -51,6 +54,15 @@ export function BibleReader() {
     const libroParam = searchParams.get("libro")
     const capituloParam = searchParams.get("capitulo")
     const versiculoParam = searchParams.get("versiculo")
+
+    // Resetear audio al cambiar de capítulo/libro
+    setAudioUrl(null)
+    setIsPlaying(false)
+    const audio = document.getElementById("chapter-audio") as HTMLAudioElement
+    if (audio) {
+      audio.pause()
+      audio.currentTime = 0
+    }
 
     if (libroParam) {
       const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
@@ -85,6 +97,8 @@ export function BibleReader() {
   const [showBookSelector, setShowBookSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"scroll" | "book">("scroll")
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
   
   const { addXP, completeChallenge } = useUserProgress()
   const { fontSize } = useSettings()
@@ -161,6 +175,9 @@ export function BibleReader() {
       // TODO: Implementar lógica para saltar al siguiente libro
     }
     setSelectedVerses([])
+    // Resetear audio
+    setAudioUrl(null)
+    setIsPlaying(false)
   }
 
   const prevChapter = () => {
@@ -168,6 +185,53 @@ export function BibleReader() {
       setSelectedChapter(prev => prev - 1)
     }
     setSelectedVerses([])
+    // Resetear audio
+    setAudioUrl(null)
+    setIsPlaying(false)
+  }
+
+  const handleListenChapter = async () => {
+    if (isPlaying && audioUrl) {
+      const audio = document.getElementById("chapter-audio") as HTMLAudioElement
+      audio.pause()
+      setIsPlaying(false)
+      return
+    }
+
+    if (audioUrl) {
+      const audio = document.getElementById("chapter-audio") as HTMLAudioElement
+      audio.play()
+      setIsPlaying(true)
+      return
+    }
+
+    try {
+      setIsPlaying(true)
+      toast.info("Generando audio del capítulo...")
+      
+      // Construir el texto completo del capítulo
+      const fullText = chapterData?.vers.map(v => v.verse).join(" ") || ""
+      
+      // Limitar caracteres para evitar errores de API (OpenAI tiene límite)
+      // En una app real, se debería hacer streaming o dividir en partes
+      const truncatedText = fullText.slice(0, 4096) 
+      
+      const { audio } = await generateVerseAudio(truncatedText, "alloy") // Usar voz 'alloy' para diferenciar
+      const url = `data:audio/mp3;base64,${audio}`
+      setAudioUrl(url)
+      
+      setTimeout(() => {
+        const audioElement = document.getElementById("chapter-audio") as HTMLAudioElement
+        if (audioElement) {
+          audioElement.play()
+          audioElement.onended = () => setIsPlaying(false)
+        }
+      }, 100)
+    } catch (error) {
+      console.error(error)
+      setIsPlaying(false)
+      toast.error("Error al generar el audio")
+    }
   }
 
   // Renderizado del selector de libros
@@ -364,6 +428,22 @@ export function BibleReader() {
         </div>
         
         <div className="flex items-center gap-2">
+           {/* Botón de Audio */}
+           <Button
+             variant="ghost"
+             size="icon"
+             className={cn("h-9 w-9 rounded-full", isPlaying && "text-primary bg-primary/10")}
+             onClick={handleListenChapter}
+             disabled={isLoading || isPlaying && !audioUrl}
+             title="Escuchar Capítulo"
+           >
+             {isPlaying && !audioUrl ? (
+               <Loader2 className="w-5 h-5 animate-spin" />
+             ) : (
+               <Volume2 className="w-5 h-5" />
+             )}
+           </Button>
+
            {/* Toggle de Vista */}
            <div className="hidden md:flex items-center border rounded-md bg-muted/50 p-1">
              <Button
@@ -498,6 +578,8 @@ export function BibleReader() {
           )}
         </div>
       )}
+      {/* Audio Element oculto */}
+      {audioUrl && <audio id="chapter-audio" src={audioUrl} className="hidden" />}
     </div>
   )
 }
