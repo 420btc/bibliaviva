@@ -51,8 +51,24 @@ export function VerseOfDay() {
         }
 
         setVerse(newVerse)
-        localStorage.setItem("biblia-viva-daily-verse", JSON.stringify(newVerse))
-        localStorage.setItem("biblia-viva-daily-verse-date", today)
+        
+        try {
+          localStorage.setItem("biblia-viva-daily-verse", JSON.stringify(newVerse))
+          localStorage.setItem("biblia-viva-daily-verse-date", today)
+        } catch (storageError) {
+          console.warn("Storage quota exceeded, clearing old data and retrying...", storageError)
+          try {
+            // Intentar limpiar todo lo que no sea esencial
+            localStorage.removeItem("biblia-viva-daily-verse")
+            localStorage.removeItem("biblia-viva-daily-verse-date")
+            // Reintentar guardar
+            localStorage.setItem("biblia-viva-daily-verse", JSON.stringify(newVerse))
+            localStorage.setItem("biblia-viva-daily-verse-date", today)
+          } catch (retryError) {
+            console.error("Could not save daily verse to localStorage even after cleanup.", retryError)
+            // No bloqueamos la UI, simplemente no se guardará en caché
+          }
+        }
       } catch (error) {
         console.error("Error loading daily verse:", error)
         // Fallback to static list based on date
