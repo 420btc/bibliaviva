@@ -188,7 +188,7 @@ export function BibleReader() {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null)
   const [isLoadingAudio, setIsLoadingAudio] = useState(false)
 
-  const { addXP, completeChallenge } = useUserProgress()
+  const { addXP, completeChallenge, incrementChapters } = useUserProgress()
   const { fontSize } = useSettings()
 
   const filteredBooks = useMemo(() => {
@@ -476,6 +476,7 @@ export function BibleReader() {
     
     // Update local context
     addXP(15) 
+    incrementChapters()
     completeChallenge('lectura-diaria', 100)
 
     // Persist to DB

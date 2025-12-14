@@ -162,14 +162,41 @@ export function JourneyPage() {
         </motion.div>
       </div>
 
-      <Tabs defaultValue="insignias" className="space-y-6">
-        <TabsList className="bg-secondary">
-          <TabsTrigger value="insignias">Insignias</TabsTrigger>
-          <TabsTrigger value="leidos">Leídos</TabsTrigger>
-          <TabsTrigger value="niveles">Niveles</TabsTrigger>
-          <TabsTrigger value="quiz">Quiz del Día</TabsTrigger>
-          <TabsTrigger value="desafios">Desafíos</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="insignias" className="space-y-8">
+        <div className="flex justify-center w-full">
+          <TabsList className="bg-secondary/50 backdrop-blur-sm p-1.5 h-auto rounded-full border border-border/50 inline-flex flex-wrap justify-center gap-2">
+            <TabsTrigger 
+              value="insignias" 
+              className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
+            >
+              Insignias
+            </TabsTrigger>
+            <TabsTrigger 
+              value="leidos" 
+              className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
+            >
+              Leídos
+            </TabsTrigger>
+            <TabsTrigger 
+              value="niveles" 
+              className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
+            >
+              Niveles
+            </TabsTrigger>
+            <TabsTrigger 
+              value="quiz" 
+              className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
+            >
+              Quiz del Día
+            </TabsTrigger>
+            <TabsTrigger 
+              value="desafios" 
+              className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
+            >
+              Desafíos
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Insignias */}
         <TabsContent value="insignias">
