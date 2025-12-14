@@ -127,14 +127,87 @@ export const featuredVerses = [
 ]
 
 export const themes = [
-  { id: "amor", nombre: "Amor", color: "#ec4899", versiculos: 45 },
-  { id: "fe", nombre: "Fe", color: "#8b5cf6", versiculos: 38 },
-  { id: "esperanza", nombre: "Esperanza", color: "#06b6d4", versiculos: 32 },
-  { id: "perdon", nombre: "Perdón", color: "#22c55e", versiculos: 28 },
-  { id: "sabiduria", nombre: "Sabiduría", color: "#f59e0b", versiculos: 52 },
-  { id: "oracion", nombre: "Oración", color: "#6366f1", versiculos: 41 },
-  { id: "paz", nombre: "Paz", color: "#14b8a6", versiculos: 35 },
-  { id: "gracia", nombre: "Gracia", color: "#f472b6", versiculos: 29 },
+  { 
+    id: "amor", 
+    nombre: "Amor", 
+    color: "#ec4899", 
+    versiculos: 45,
+    relatedVerses: [
+      { libro: "Juan", capitulo: 3, versiculo: 16, texto: "Porque de tal manera amó Dios al mundo..." },
+      { libro: "1 Corintios", capitulo: 13, versiculo: 4, texto: "El amor es sufrido, es benigno; el amor no tiene envidia..." },
+      { libro: "Romanos", capitulo: 5, versiculo: 8, texto: "Mas Dios muestra su amor para con nosotros, en que siendo aún pecadores, Cristo murió por nosotros." }
+    ]
+  },
+  { 
+    id: "fe", 
+    nombre: "Fe", 
+    color: "#8b5cf6", 
+    versiculos: 38,
+    relatedVerses: [
+      { libro: "Hebreos", capitulo: 11, versiculo: 1, texto: "Es, pues, la fe la certeza de lo que se espera, la convicción de lo que no se ve." },
+      { libro: "Romanos", capitulo: 10, versiculo: 17, texto: "Así que la fe es por el oír, y el oír, por la palabra de Dios." }
+    ]
+  },
+  { 
+    id: "esperanza", 
+    nombre: "Esperanza", 
+    color: "#06b6d4", 
+    versiculos: 32,
+    relatedVerses: [
+      { libro: "Jeremías", capitulo: 29, versiculo: 11, texto: "Porque yo sé los pensamientos que tengo acerca de vosotros..." },
+      { libro: "Romanos", capitulo: 15, versiculo: 13, texto: "Y el Dios de esperanza os llene de todo gozo y paz en el creer..." }
+    ]
+  },
+  { 
+    id: "perdon", 
+    nombre: "Perdón", 
+    color: "#22c55e", 
+    versiculos: 28,
+    relatedVerses: [
+      { libro: "1 Juan", capitulo: 1, versiculo: 9, texto: "Si confesamos nuestros pecados, él es fiel y justo para perdonar..." },
+      { libro: "Efesios", capitulo: 4, versiculo: 32, texto: "Antes sed benignos unos con otros, misericordiosos, perdonándoos unos a otros..." }
+    ]
+  },
+  { 
+    id: "sabiduria", 
+    nombre: "Sabiduría", 
+    color: "#f59e0b", 
+    versiculos: 52,
+    relatedVerses: [
+      { libro: "Santiago", capitulo: 1, versiculo: 5, texto: "Y si alguno de vosotros tiene falta de sabiduría, pídala a Dios..." },
+      { libro: "Proverbios", capitulo: 1, versiculo: 7, texto: "El principio de la sabiduría es el temor de Jehová..." }
+    ]
+  },
+  { 
+    id: "oracion", 
+    nombre: "Oración", 
+    color: "#6366f1", 
+    versiculos: 41,
+    relatedVerses: [
+      { libro: "1 Tesalonicenses", capitulo: 5, versiculo: 17, texto: "Orad sin cesar." },
+      { libro: "Filipenses", capitulo: 4, versiculo: 6, texto: "Por nada estéis afanosos, sino sean conocidas vuestras peticiones..." }
+    ]
+  },
+  { 
+    id: "paz", 
+    nombre: "Paz", 
+    color: "#14b8a6", 
+    versiculos: 35,
+    relatedVerses: [
+      { libro: "Juan", capitulo: 14, versiculo: 27, texto: "La paz os dejo, mi paz os doy; yo no os la doy como el mundo la da." },
+      { libro: "Filipenses", capitulo: 4, versiculo: 7, texto: "Y la paz de Dios, que sobrepasa todo entendimiento, guardará vuestros corazones..." }
+    ]
+  },
+  { 
+    id: "gracia", 
+    nombre: "Gracia", 
+    color: "#f472b6", 
+    versiculos: 29,
+    relatedVerses: [
+      { libro: "Efesios", capitulo: 2, versiculo: 8, texto: "Porque por gracia sois salvos por medio de la fe..." },
+      { libro: "2 Corintios", capitulo: 12, versiculo: 9, texto: "Y me ha dicho: Bástate mi gracia; porque mi poder se perfecciona en la debilidad." }
+    ]
+  },
 ]
 
 // Versículos completos para el componente VerseOfDay
@@ -216,12 +289,84 @@ export const dailyVerses = [
 ]
 
 export const characters = [
-  { id: "jesus", nombre: "Jesús", tipo: "divino", menciones: 1281 },
-  { id: "moises", nombre: "Moisés", tipo: "profeta", menciones: 848 },
-  { id: "david", nombre: "David", tipo: "rey", menciones: 1118 },
-  { id: "abraham", nombre: "Abraham", tipo: "patriarca", menciones: 312 },
-  { id: "pablo", nombre: "Pablo", tipo: "apóstol", menciones: 185 },
-  { id: "pedro", nombre: "Pedro", tipo: "apóstol", menciones: 166 },
-  { id: "maria", nombre: "María", tipo: "madre", menciones: 54 },
-  { id: "salomon", nombre: "Salomón", tipo: "rey", menciones: 295 },
+  { 
+    id: "jesus", 
+    nombre: "Jesús", 
+    tipo: "divino", 
+    menciones: 1281,
+    relatedVerses: [
+      { libro: "Juan", capitulo: 14, versiculo: 6, texto: "Jesús le dijo: Yo soy el camino, y la verdad, y la vida..." },
+      { libro: "Mateo", capitulo: 1, versiculo: 21, texto: "Y dará a luz un hijo, y llamarás su nombre JESÚS..." }
+    ]
+  },
+  { 
+    id: "moises", 
+    nombre: "Moisés", 
+    tipo: "profeta", 
+    menciones: 848,
+    relatedVerses: [
+      { libro: "Éxodo", capitulo: 3, versiculo: 14, texto: "Y respondió Dios a Moisés: YO SOY EL QUE SOY." },
+      { libro: "Deuteronomio", capitulo: 34, versiculo: 10, texto: "Y nunca más se levantó profeta en Israel como Moisés..." }
+    ]
+  },
+  { 
+    id: "david", 
+    nombre: "David", 
+    tipo: "rey", 
+    menciones: 1118,
+    relatedVerses: [
+      { libro: "1 Samuel", capitulo: 16, versiculo: 13, texto: "Y Samuel tomó el cuerno del aceite, y lo ungió en medio de sus hermanos..." },
+      { libro: "Salmos", capitulo: 23, versiculo: 1, texto: "Jehová es mi pastor; nada me faltará. (Salmo de David)" }
+    ]
+  },
+  { 
+    id: "abraham", 
+    nombre: "Abraham", 
+    tipo: "patriarca", 
+    menciones: 312,
+    relatedVerses: [
+      { libro: "Génesis", capitulo: 12, versiculo: 1, texto: "Pero Jehová había dicho a Abram: Vete de tu tierra y de tu parentela..." },
+      { libro: "Génesis", capitulo: 15, versiculo: 6, texto: "Y creyó a Jehová, y le fue contado por justicia." }
+    ]
+  },
+  { 
+    id: "pablo", 
+    nombre: "Pablo", 
+    tipo: "apóstol", 
+    menciones: 185,
+    relatedVerses: [
+      { libro: "Hechos", capitulo: 9, versiculo: 4, texto: "y cayendo en tierra, oyó una voz que le decía: Saulo, Saulo, ¿por qué me persigues?" },
+      { libro: "Filipenses", capitulo: 1, versiculo: 21, texto: "Porque para mí el vivir es Cristo, y el morir es ganancia." }
+    ]
+  },
+  { 
+    id: "pedro", 
+    nombre: "Pedro", 
+    tipo: "apóstol", 
+    menciones: 166,
+    relatedVerses: [
+      { libro: "Mateo", capitulo: 16, versiculo: 18, texto: "Y yo también te digo, que tú eres Pedro, y sobre esta roca edificaré mi iglesia..." },
+      { libro: "1 Pedro", capitulo: 1, versiculo: 3, texto: "Bendito el Dios y Padre de nuestro Señor Jesucristo..." }
+    ]
+  },
+  { 
+    id: "maria", 
+    nombre: "María", 
+    tipo: "madre", 
+    menciones: 54,
+    relatedVerses: [
+      { libro: "Lucas", capitulo: 1, versiculo: 38, texto: "Entonces María dijo: He aquí la sierva del Señor; hágase conmigo conforme a tu palabra." },
+      { libro: "Lucas", capitulo: 1, versiculo: 46, texto: "Entonces María dijo: Engrandece mi alma al Señor..." }
+    ]
+  },
+  { 
+    id: "salomon", 
+    nombre: "Salomón", 
+    tipo: "rey", 
+    menciones: 295,
+    relatedVerses: [
+      { libro: "1 Reyes", capitulo: 3, versiculo: 9, texto: "Da, pues, a tu siervo corazón entendido para juzgar a tu pueblo..." },
+      { libro: "Proverbios", capitulo: 1, versiculo: 1, texto: "Los proverbios de Salomón, hijo de David, rey de Israel." }
+    ]
+  },
 ]

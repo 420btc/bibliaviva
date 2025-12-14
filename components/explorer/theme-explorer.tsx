@@ -7,8 +7,16 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { themes, characters } from "@/lib/bible-data"
-import { Search, ZoomIn, ZoomOut, Maximize2, X } from "lucide-react"
+import { Search, ZoomIn, ZoomOut, Maximize2, X, BookOpen, Share2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface Node {
   id: string
@@ -101,6 +109,7 @@ export function ThemeExplorer() {
   const [searchTerm, setSearchTerm] = useState("")
   const animationRef = useRef<number | null>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+  const [activeSheet, setActiveSheet] = useState<'verses' | 'connections' | null>(null)
 
   // Manejar redimensionamiento
   useEffect(() => {
@@ -280,8 +289,81 @@ export function ThemeExplorer() {
 
   const filteredThemes = themes.filter((t) => t.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
 
+  const getSelectedData = () => {
+    if (!selectedNode) return null
+    if (selectedNode.type === 'theme') {
+      return themes.find(t => `theme-${t.id}` === selectedNode.id)
+    }
+    return characters.find(c => `char-${c.id}` === selectedNode.id)
+  }
+
+  const getConnectedNodes = () => {
+    if (!selectedNode) return []
+    return connections
+      .filter(c => c.source === selectedNode.id || c.target === selectedNode.id)
+      .map(c => {
+        const otherId = c.source === selectedNode.id ? c.target : c.source
+        return nodesRef.current.find(n => n.id === otherId)
+      })
+      .filter(Boolean) as Node[]
+  }
+
+  const selectedData = getSelectedData()
+
   return (
     <div className="h-full flex flex-col">
+      <Sheet open={!!activeSheet} onOpenChange={(open) => !open && setActiveSheet(null)}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>
+              {activeSheet === 'verses' ? 'Versículos Relacionados' : 'Conexiones'}
+            </SheetTitle>
+            <SheetDescription>
+              {activeSheet === 'verses' 
+                ? `Pasajes bíblicos sobre ${selectedNode?.label}`
+                : `Explora cómo se conecta ${selectedNode?.label} con otros conceptos`
+              }
+            </SheetDescription>
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-120px)] mt-4 pr-4">
+            {activeSheet === 'verses' && selectedData && 'relatedVerses' in selectedData && (
+              <div className="space-y-4">
+                {(selectedData as any).relatedVerses?.map((verse: any, i: number) => (
+                  <Card key={i} className="p-4 bg-secondary/50 border-0">
+                    <p className="text-sm text-foreground italic mb-2">"{verse.texto}"</p>
+                    <p className="text-xs font-semibold text-primary text-right">
+                      {verse.libro} {verse.capitulo}:{verse.versiculo}
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            )}
+            
+            {activeSheet === 'connections' && (
+              <div className="space-y-2">
+                {getConnectedNodes().map(node => (
+                  <Button
+                    key={node.id}
+                    variant="outline"
+                    className="w-full justify-start gap-3 h-auto p-3"
+                    onClick={() => {
+                      setSelectedNode(node)
+                      setActiveSheet(null) // Opcional: mantener abierto o cerrar
+                    }}
+                  >
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: node.color }} />
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium">{node.label}</span>
+                      <span className="text-xs text-muted-foreground capitalize">{node.type === 'theme' ? 'Tema' : 'Personaje'}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
       {/* Encabezado */}
       <div className="border-b border-border p-4">
         <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto">
@@ -389,10 +471,19 @@ export function ThemeExplorer() {
                       : `Descubre pasajes relacionados con ${selectedNode.label}`}
                   </p>
                   <div className="space-y-2">
-                    <Button className="w-full gap-2 gradient-primary border-0" size="sm">
+                    <Button 
+                      className="w-full gap-2 gradient-primary border-0" 
+                      size="sm"
+                      onClick={() => setActiveSheet('verses')}
+                    >
                       Ver versículos
                     </Button>
-                    <Button variant="outline" className="w-full bg-transparent" size="sm">
+                    <Button 
+                      variant="outline" 
+                      className="w-full bg-transparent" 
+                      size="sm"
+                      onClick={() => setActiveSheet('connections')}
+                    >
                       Ver conexiones
                     </Button>
                   </div>

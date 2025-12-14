@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   title: "Biblia Viva - Estudio Bíblico Interactivo",
   description: "Explora la Biblia con inteligencia artificial, gamificación y estudio colaborativo",
   generator: "v0.app",
+  icons: {
+    icon: "/biblia.png",
+    shortcut: "/biblia.png",
+    apple: "/biblia.png",
+  },
 }
 
 export const viewport: Viewport = {
