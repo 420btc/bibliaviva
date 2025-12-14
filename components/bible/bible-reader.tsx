@@ -26,7 +26,8 @@ import {
   Settings2,
   Trash2,
   X,
-  HelpCircle
+  HelpCircle,
+  CheckCircle2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -464,6 +465,18 @@ export function BibleReader() {
       
       setIsSearchOpen(false)
     }
+  }
+
+  // Marcar como leído
+  const markAsRead = () => {
+    toast.success(`Leído: ${selectedBook.nombre} ${selectedChapter}`, {
+      description: "¡Excelente progreso! Continúa así."
+    })
+    addXP(15) // XP por completar capítulo
+    completeChallenge('lectura-diaria', 100) // Completar desafío diario si aplica
+    
+    // Opcional: Navegar al siguiente automáticamente o preguntar
+    // nextChapter()
   }
 
   const renderSearchDialog = () => (
@@ -944,23 +957,34 @@ export function BibleReader() {
                 )
               })}
               
-              <div className="flex justify-between mt-12 pt-8 border-t border-border">
+              <div className="flex flex-col gap-4 mt-12 pt-8 border-t border-border">
                 <Button 
-                  variant="outline" 
-                  onClick={prevChapter}
-                  disabled={selectedChapter <= 1}
+                  className="w-full md:w-auto mx-auto gap-2 shadow-sm bg-zinc-200 text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-700 transition-all"
+                  size="default"
+                  onClick={markAsRead}
                 >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  Anterior
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="font-medium tracking-wide text-xs uppercase">Marcar como leído</span>
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={nextChapter}
-                  disabled={selectedChapter >= selectedBook.capitulos}
-                >
-                  Siguiente
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+
+                <div className="flex justify-between w-full">
+                  <Button 
+                    variant="outline" 
+                    onClick={prevChapter}
+                    disabled={selectedChapter <= 1}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    Anterior
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={nextChapter}
+                    disabled={selectedChapter >= selectedBook.capitulos}
+                  >
+                    Siguiente
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}

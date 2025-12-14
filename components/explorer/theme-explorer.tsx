@@ -6,8 +6,9 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { themes, characters } from "@/lib/bible-data"
-import { Search, ZoomIn, ZoomOut, Maximize2, X, BookOpen, Share2 } from "lucide-react"
+import { themes, characters, getAllBooksFlat } from "@/lib/bible-data"
+import { searchBible, type SearchResult } from "@/lib/bible-api"
+import { Search, ZoomIn, ZoomOut, Maximize2, X, BookOpen, Share2, Loader2, Sparkles } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Sheet,
@@ -114,6 +115,58 @@ export function ThemeExplorer() {
   const animationRef = useRef<number | null>(null)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const [activeSheet, setActiveSheet] = useState<'verses' | 'connections' | null>(null)
+  
+  // Estados para carga dinámica de versículos
+  const [dynamicVerses, setDynamicVerses] = useState<any[]>([])
+  const [isLoadingVerses, setIsLoadingVerses] = useState(false)
+
+  // Cargar versículos adicionales cuando se abre el sheet
+  useEffect(() => {
+    const fetchMoreVerses = async () => {
+      if (activeSheet === 'verses' && selectedNode) {
+        setIsLoadingVerses(true)
+        setDynamicVerses([]) // Limpiar anteriores
+        
+        try {
+          // Obtener versículos base del hardcode (los 2 iniciales)
+          const baseData = getSelectedData() as any
+          const initialVerses = baseData?.relatedVerses || []
+          
+          // Buscar más en la API
+          // Usamos el nombre del nodo como query (ej: "Amor", "Jesús")
+          const searchRes = await searchBible(selectedNode.label, "RV1960", 1, 10)
+          
+          // Filtrar duplicados y mapear nombres de libros
+          const allBooks = getAllBooksFlat()
+          
+          const newVerses = searchRes.results
+            .filter(r => !initialVerses.some((iv: any) => 
+               (iv.texto && r.text.includes(iv.texto.substring(0, 10)))
+            ))
+            .map(r => {
+              const bookName = allBooks[r.book - 1]?.nombre || "Biblia"
+              return {
+                libro: bookName,
+                capitulo: r.chapter,
+                versiculo: r.verse,
+                texto: r.text.replace(/<[^>]*>/g, ''), // Limpiar HTML
+                esExtra: true
+              }
+            })
+
+          setDynamicVerses(newVerses)
+        } catch (e) {
+          console.error("Error fetching extra verses", e)
+        } finally {
+          setIsLoadingVerses(false)
+        }
+      }
+    }
+
+    if (activeSheet === 'verses') {
+      fetchMoreVerses()
+    }
+  }, [activeSheet, selectedNode])
 
   // Manejar redimensionamiento
   useEffect(() => {
@@ -332,15 +385,33 @@ export function ThemeExplorer() {
           </SheetHeader>
           <ScrollArea className="h-[calc(100vh-120px)] mt-4 pr-4">
             {activeSheet === 'verses' && selectedData && 'relatedVerses' in selectedData && (
-              <div className="space-y-4">
+              <div className="space-y-4 pb-10">
+                {/* Versículos Originales */}
                 {(selectedData as any).relatedVerses?.map((verse: any, i: number) => (
-                  <Card key={i} className="p-4 bg-secondary/50 border-0">
+                  <Card key={`orig-${i}`} className="p-4 bg-secondary/50 border-0">
                     <p className="text-sm text-foreground italic mb-2">"{verse.texto}"</p>
                     <p className="text-xs font-semibold text-primary text-right">
                       {verse.libro} {verse.capitulo}:{verse.versiculo}
                     </p>
                   </Card>
                 ))}
+
+                {/* Versículos Dinámicos */}
+                {dynamicVerses.map((verse: any, i: number) => (
+                  <Card key={`dyn-${i}`} className="p-4 bg-background/50 border border-border/50 animate-in fade-in slide-in-from-bottom-2">
+                    <p className="text-sm text-foreground italic mb-2">"{verse.texto}"</p>
+                    <p className="text-xs font-semibold text-primary text-right flex justify-end items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-yellow-500/50" />
+                      {verse.libro} {verse.capitulo}:{verse.versiculo}
+                    </p>
+                  </Card>
+                ))}
+
+                {isLoadingVerses && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                )}
               </div>
             )}
             
