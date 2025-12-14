@@ -231,9 +231,9 @@ export function AIChat() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full glass-card rounded-2xl border border-primary/20 overflow-hidden shadow-sm">
-      <ScrollArea className="flex-1 p-4 md:p-6">
-        <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="flex flex-col h-full w-full glass-card rounded-2xl border border-primary/20 overflow-hidden shadow-sm relative">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
+        <div className="space-y-6 max-w-4xl mx-auto pb-4">
           {messages.map((message) => (
             <motion.div
               key={message.id}
@@ -266,11 +266,11 @@ export function AIChat() {
               <span className="animate-pulse">Escribiendo respuesta...</span>
             </motion.div>
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-4" />
         </div>
-      </ScrollArea>
+      </div>
 
-      <div className="p-4 md:p-6 bg-background/40 backdrop-blur-md border-t border-border/50">
+      <div className="p-4 md:p-6 bg-background/40 backdrop-blur-md border-t border-border/50 z-10">
         <div className="max-w-4xl mx-auto space-y-4">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mask-fade-right">
               {suggestedQuestions.map((q, i) => (
