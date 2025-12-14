@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useRef, useEffect } from 'react';
+import { getCurrentSeason } from "@/lib/seasons"
 
 // ===================== HERO COMPONENT =====================
 const AuroraHero = ({
@@ -95,6 +96,13 @@ const InteractiveShader = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mousePos = useRef({ x: 0.5, y: 0.5 });
+  const [seasonColor, setSeasonColor] = React.useState({ r: 0.5, g: 0.5, b: 0.5 }); // Default neutral
+
+  // Detect season
+  useEffect(() => {
+    const season = getCurrentSeason();
+    setSeasonColor(season.colors);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -122,6 +130,7 @@ const InteractiveShader = ({
       uniform float uColorIntensity;
       uniform float uNoiseLayers;
       uniform float uMouseInfluence;
+      uniform vec3 uSeasonColor;
 
       #define MARCH_STEPS 32
 
@@ -169,8 +178,10 @@ const InteractiveShader = ({
             vec3 p = ro + rd * t;
             float density = map(p);
             if (density > 0.0) {
-                vec3 auroraColor = 0.5 + 0.5 * cos(iTime * 0.5 + p.y * 2.0 + vec3(0,2,4));
-                col += auroraColor * density * 0.1 * uColorIntensity;
+                // Mezclar color base con color de temporada
+                vec3 baseColor = 0.5 + 0.5 * cos(iTime * 0.5 + p.y * 2.0 + vec3(0,2,4));
+                vec3 finalColor = mix(baseColor, uSeasonColor, 0.6); // 60% influencia de temporada
+                col += finalColor * density * 0.1 * uColorIntensity;
             }
             t += 0.1;
         }
@@ -223,6 +234,7 @@ const InteractiveShader = ({
     const uColorIntensityLocation = gl.getUniformLocation(program, "uColorIntensity");
     const uNoiseLayersLocation = gl.getUniformLocation(program, "uNoiseLayers");
     const uMouseInfluenceLocation = gl.getUniformLocation(program, "uMouseInfluence");
+    const uSeasonColorLocation = gl.getUniformLocation(program, "uSeasonColor");
 
     const startTime = performance.now();
     let animationFrameId: number;
@@ -258,6 +270,7 @@ const InteractiveShader = ({
       if (uColorIntensityLocation) gl.uniform1f(uColorIntensityLocation, colorIntensity);
       if (uNoiseLayersLocation) gl.uniform1f(uNoiseLayersLocation, noiseLayers);
       if (uMouseInfluenceLocation) gl.uniform1f(uMouseInfluenceLocation, mouseInfluence);
+      if (uSeasonColorLocation) gl.uniform3f(uSeasonColorLocation, seasonColor.r, seasonColor.g, seasonColor.b);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       animationFrameId = requestAnimationFrame(renderLoop);
@@ -275,7 +288,7 @@ const InteractiveShader = ({
         gl.deleteBuffer(vertexBuffer);
       }
     };
-  }, [flowSpeed, colorIntensity, noiseLayers, mouseInfluence]);
+  }, [flowSpeed, colorIntensity, noiseLayers, mouseInfluence, seasonColor]); // Add seasonColor dependency
 
   return <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />;
 };
