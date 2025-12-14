@@ -103,8 +103,34 @@ export function BibleReader() {
           }
         }
       }
+    } else {
+      // Cargar última posición guardada si no hay params en URL
+      const savedPosition = localStorage.getItem("biblia-viva-last-position")
+      if (savedPosition) {
+        try {
+          const { bookId, chapter } = JSON.parse(savedPosition)
+          const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
+          const book = allBooks.find(b => b.id === bookId)
+          if (book) {
+            setSelectedBook(book)
+            setSelectedChapter(chapter)
+          }
+        } catch (e) {
+          console.error("Error loading saved position", e)
+        }
+      }
     }
   }, [searchParams])
+
+  // Guardar posición al cambiar
+  useEffect(() => {
+    if (selectedBook && selectedChapter) {
+      localStorage.setItem("biblia-viva-last-position", JSON.stringify({
+        bookId: selectedBook.id,
+        chapter: selectedChapter
+      }))
+    }
+  }, [selectedBook, selectedChapter])
 
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
   const [showBookSelector, setShowBookSelector] = useState(false)
@@ -187,6 +213,36 @@ export function BibleReader() {
     
     setHighlights(newHighlights)
     setSelectedVerses([])
+  }
+
+  // Función para guardar Bookmark
+  const saveBookmark = () => {
+    if (selectedVerses.length === 0) return
+
+    const versesToSave = selectedVerses.sort((a, b) => a - b).map(v => {
+      const verseText = chapterData?.vers.find(verse => parseInt(verse.number) === v)?.verse
+      return {
+        id: `${selectedBook.id}-${selectedChapter}-${v}-${Date.now()}`,
+        bookId: selectedBook.id,
+        bookName: selectedBook.nombre,
+        chapter: selectedChapter,
+        verse: v,
+        text: verseText || "",
+        date: new Date().toISOString()
+      }
+    })
+
+    try {
+      const existingBookmarks = JSON.parse(localStorage.getItem("biblia-viva-bookmarks") || "[]")
+      const newBookmarks = [...existingBookmarks, ...versesToSave]
+      localStorage.setItem("biblia-viva-bookmarks", JSON.stringify(newBookmarks))
+      toast.success("Versículo(s) guardado(s) en favoritos")
+      addXP(5)
+      setSelectedVerses([])
+    } catch (error) {
+      console.error("Error saving bookmark", error)
+      toast.error("No se pudo guardar el versículo (Storage full?)")
+    }
   }
 
   // Audio Logic
@@ -641,7 +697,12 @@ export function BibleReader() {
                 <Button variant="ghost" size="icon" title="Copiar">
                   <Share2 className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" title="Guardar">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  title="Guardar en favoritos"
+                  onClick={saveBookmark}
+                >
                   <Bookmark className="w-4 h-4" />
                 </Button>
               </motion.div>
