@@ -50,15 +50,15 @@ export default function LoginPage() {
                   priority
                 />
             </div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">Biblia Viva</h1>
-            <p className="text-muted-foreground text-center mt-2">
+            <h1 className="text-3xl font-bold text-foreground tracking-tight drop-shadow-xl">Biblia Viva</h1>
+            <p className="text-muted-foreground text-center mt-2 drop-shadow-md">
               Tu compañero espiritual inteligente
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-foreground ml-1">
+              <label htmlFor="name" className="text-sm font-medium text-foreground ml-1 drop-shadow-sm">
                 Nombre de Usuario
               </label>
               <Input
@@ -67,12 +67,12 @@ export default function LoginPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="bg-secondary/50 border-border/50 focus:border-primary h-11"
+                className="bg-secondary/50 border-border/50 focus:border-primary h-11 shadow-lg"
               />
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground ml-1">
+              <label htmlFor="email" className="text-sm font-medium text-foreground ml-1 drop-shadow-sm">
                 Correo Electrónico
               </label>
               <Input
@@ -82,9 +82,9 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-secondary/50 border-border/50 focus:border-primary h-11"
+                className="bg-secondary/50 border-border/50 focus:border-primary h-11 shadow-lg"
               />
-              <p className="text-xs text-muted-foreground ml-1">
+              <p className="text-xs text-muted-foreground ml-1 drop-shadow-sm">
                 Usado para guardar y recuperar tu progreso en la nube.
               </p>
             </div>
@@ -118,21 +118,21 @@ export default function LoginPage() {
         {/* Columna Derecha: Información */}
         <div className="hidden md:flex flex-col space-y-6 text-foreground p-4">
             <div>
-                <h2 className="text-4xl font-bold mb-4 text-white-500">
+                <h2 className="text-4xl font-bold mb-4 text-blue-600 drop-shadow-lg">
                     Explora la Palabra como nunca antes.
                 </h2>
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg text-muted-foreground leading-relaxed drop-shadow-md">
                     Biblia Viva combina la sabiduría eterna de las Escrituras con tecnología moderna para enriquecer tu vida espiritual diaria.
                 </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
                 {features.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-4 p-4 rounded-xl bg-card/40 border border-border/50 backdrop-blur-sm">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                            <feature.icon className="w-5 h-5" />
+                    <div key={idx} className="flex items-center gap-4 p-4 rounded-xl bg-card/40 border border-border/50 backdrop-blur-sm shadow-xl">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shadow-inner">
+                            <feature.icon className="w-5 h-5 drop-shadow-sm" />
                         </div>
-                        <span className="font-medium">{feature.text}</span>
+                        <span className="font-medium drop-shadow-sm">{feature.text}</span>
                     </div>
                 ))}
             </div>
