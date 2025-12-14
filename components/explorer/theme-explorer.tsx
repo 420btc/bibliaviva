@@ -94,6 +94,8 @@ const createConnections = (): Connection[] => {
     { source: "char-jesus", target: "theme-paz" },
     { source: "char-moises", target: "theme-fe" },
     { source: "char-david", target: "theme-amor" },
+    { source: "theme-fortaleza", target: "char-david" },
+    { source: "theme-fortaleza", target: "char-pablo" },
     // Conexiones de María
     { source: "char-maria", target: "theme-fe" },
     { source: "char-maria", target: "theme-gracia" },

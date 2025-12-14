@@ -208,6 +208,16 @@ export const themes = [
       { libro: "2 Corintios", capitulo: 12, versiculo: 9, texto: "Y me ha dicho: Bástate mi gracia; porque mi poder se perfecciona en la debilidad." }
     ]
   },
+  { 
+    id: "fortaleza", 
+    nombre: "Fortaleza", 
+    color: "#e11d48", 
+    versiculos: 25,
+    relatedVerses: [
+      { libro: "Isaías", capitulo: 40, versiculo: 31, texto: "Pero los que esperan a Jehová tendrán nuevas fuerzas..." },
+      { libro: "Filipenses", capitulo: 4, versiculo: 13, texto: "Todo lo puedo en Cristo que me fortalece." }
+    ]
+  },
 ]
 
 // Versículos completos para el componente VerseOfDay
