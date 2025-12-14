@@ -18,13 +18,19 @@ import {
   LogOut,
   Sparkles,
   Home,
-  Crown
+  Crown,
+  Heart,
+  StickyNote,
+  CalendarRange
 } from "lucide-react"
 
 const navItems = [
   { href: "/", icon: Home, label: "Inicio" },
   { href: "/biblia", icon: Book, label: "Biblia" },
+  { href: "/planes", icon: CalendarRange, label: "Planes" },
   { href: "/chat", icon: MessageCircle, label: "Chat IA" },
+  { href: "/oraciones", icon: Heart, label: "Oraciones" },
+  { href: "/notas", icon: StickyNote, label: "Mis Notas" },
   { href: "/explorador", icon: Network, label: "Explorador" },
   { href: "/viaje", icon: Trophy, label: "Mi Viaje" },
   { href: "/grupos", icon: Users, label: "Comunidad" },
