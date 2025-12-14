@@ -152,6 +152,15 @@ export default function LoginPage() {
           </div>
       </div>
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+        <a 
+          href="https://carlosfr.es" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-md border border-border/30 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/50 transition-all flex items-center gap-1.5 shadow-sm"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+          Made by: Carlosfr.es
+        </a>
       </div>
     </div>
   )

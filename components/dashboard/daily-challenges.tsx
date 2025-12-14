@@ -61,7 +61,11 @@ export function DailyChallenges() {
                     Ir
                   </Button>
                 ) : (
-                  <Link href={desafio.id === "lectura-diaria" ? "/biblia" : "/viaje"}>
+                  <Link href={
+                    desafio.id === "lectura-diaria" ? "/biblia" :
+                    desafio.id === "verso-reflexion" ? "/notas" :
+                    "/viaje"
+                  }>
                     <Button size="sm" variant="secondary">
                       Ir
                     </Button>

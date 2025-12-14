@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth-provider"
 import { getUserNotesAction, saveNoteAction, deleteNoteAction, syncNotesAction, type Note } from "@/actions/notes"
+import { useUserProgress } from "@/hooks/use-user-progress"
 
 const initialNotes: Note[] = [
   {
@@ -35,6 +36,7 @@ export function UserNotes() {
   const [currentNote, setCurrentNote] = useState<Partial<Note>>({})
   const [isEditing, setIsEditing] = useState(false)
   const { user } = useAuth()
+  const { completeChallenge } = useUserProgress()
   const [isLoaded, setIsLoaded] = useState(false)
 
   // Cargar notas
@@ -99,37 +101,43 @@ export function UserNotes() {
       const updatedNote = { ...notes.find(n => n.id === currentNote.id), ...currentNote } as Note
       const updatedNotes = notes.map(n => n.id === currentNote.id ? updatedNote : n)
       setNotes(updatedNotes)
-      toast.success("Nota actualizada")
       
       if (user?.id) {
-          saveNoteAction(user.id, updatedNote)
+         saveNoteAction(user.id, updatedNote).catch(console.error)
       }
+      
+      toast.success("Nota actualizada")
     } else {
       const newNote: Note = {
         id: Date.now().toString(),
-        title: currentNote.title,
-        content: currentNote.content,
+        title: currentNote.title || "",
+        content: currentNote.content || "",
         date: new Date().toISOString().split('T')[0],
-        tags: [] // Implementar tags luego
+        tags: currentNote.tags || []
       }
-      setNotes([newNote, ...notes])
-      toast.success("Nota creada")
+      const updatedNotes = [newNote, ...notes]
+      setNotes(updatedNotes)
       
       if (user?.id) {
-          saveNoteAction(user.id, newNote)
+         saveNoteAction(user.id, newNote).catch(console.error)
       }
+
+      // Completar desafío "Verso y Reflexión"
+      completeChallenge('verso-reflexion', 15)
+      
+      toast.success("Nota guardada")
     }
     setIsDialogOpen(false)
     setCurrentNote({})
     setIsEditing(false)
   }
 
-  const handleDeleteNote = (id: string) => {
+  const handleDeleteNote = async (id: string) => {
     setNotes(notes.filter(n => n.id !== id))
-    toast.success("Nota eliminada")
     if (user?.id) {
-        deleteNoteAction(user.id, id)
+        deleteNoteAction(user.id, id).catch(console.error)
     }
+    toast.success("Nota eliminada")
   }
 
   const openNewNote = () => {
