@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { desafiosDiarios } from "@/lib/gamification"
 import { CheckCircle2, Circle, Zap } from "lucide-react"
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 export function DailyChallenges() {
   return (
@@ -42,9 +43,11 @@ export function DailyChallenges() {
                 <Zap className="w-4 h-4" />+{desafio.xp}
               </span>
               {!desafio.completado && (
-                <Button size="sm" variant="secondary">
-                  Ir
-                </Button>
+                <Link href={desafio.id === "lectura-diaria" ? "/biblia" : "/viaje"}>
+                  <Button size="sm" variant="secondary">
+                    Ir
+                  </Button>
+                </Link>
               )}
             </div>
           </motion.div>
