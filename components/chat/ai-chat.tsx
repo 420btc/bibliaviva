@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Send, Sparkles, BookOpen, Lightbulb, Heart, RefreshCw } from "lucide-react"
+import { Send, Sparkles, BookOpen, Lightbulb, Heart, RefreshCw, ImageIcon, Download, ExternalLink } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { chatWithBibleAI } from "@/lib/openai-actions"
 import { toast } from "sonner"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { saveChatMessageAction, getChatHistoryAction, type Message } from "@/actions/chat"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import Image from "next/image"
 
 const suggestedQuestions = [
   { icon: BookOpen, text: "¿Qué significa nacer de nuevo?" },
@@ -173,6 +175,61 @@ export function AIChat() {
     }
   }
 
+  // Render message content with potential images
+  const renderContent = (content: string) => {
+    const imageRegex = /\[IMAGE_URL:(.*?)\]/g
+    const parts = content.split(imageRegex)
+    
+    if (parts.length === 1) {
+        return <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{content}</p>
+    }
+
+    return (
+        <div className="space-y-4">
+            {parts.map((part, i) => {
+                if (part.startsWith("http")) {
+                    return (
+                        <Dialog key={i}>
+                            <DialogTrigger asChild>
+                                <div className="relative aspect-square w-full max-w-sm rounded-lg overflow-hidden cursor-zoom-in border border-border hover:opacity-90 transition-opacity my-2">
+                                    <Image 
+                                        src={part} 
+                                        alt="Generated content" 
+                                        fill 
+                                        className="object-cover"
+                                    />
+                                    <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm flex items-center gap-1">
+                                        <ImageIcon className="w-3 h-3" />
+                                        Click para ampliar
+                                    </div>
+                                </div>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl w-full p-0 overflow-hidden bg-transparent border-0 shadow-none">
+                                <div className="relative w-full h-[80vh]">
+                                    <Image 
+                                        src={part} 
+                                        alt="Full size" 
+                                        fill 
+                                        className="object-contain"
+                                    />
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                        <Button size="sm" variant="secondary" onClick={() => window.open(part, '_blank')}>
+                                            <ExternalLink className="w-4 h-4 mr-2" />
+                                            Abrir original
+                                        </Button>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    )
+                }
+                if (!part.trim()) return null
+                return <p key={i} className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{part}</p>
+            })}
+        </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full w-full glass-card rounded-2xl border border-primary/20 overflow-hidden shadow-sm">
       <ScrollArea className="flex-1 p-4 md:p-6">
@@ -198,7 +255,7 @@ export function AIChat() {
                       : "bg-primary text-primary-foreground border-primary"
                   }`}
                 >
-                  <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  {renderContent(message.content)}
                 </Card>
               </div>
             </motion.div>
