@@ -17,10 +17,13 @@ import {
   Share2, 
   Bookmark,
   Volume2,
+  Pause,
+  Play,
   Menu,
   Columns,
   ScrollText,
-  Loader2
+  Loader2,
+  Settings2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -29,6 +32,18 @@ import { useSettings } from "@/components/settings-provider"
 import { useSearchParams } from "next/navigation"
 import { generateVerseAudio } from "@/lib/openai-actions"
 import { toast } from "sonner"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 const highlightColors = [
   { name: "Amarillo", class: "bg-yellow-500/30", color: "#eab308" },
@@ -56,13 +71,7 @@ export function BibleReader() {
     const versiculoParam = searchParams.get("versiculo")
 
     // Resetear audio al cambiar de capítulo/libro
-    setAudioUrl(null)
-    setIsPlaying(false)
-    const audio = document.getElementById("chapter-audio") as HTMLAudioElement
-    if (audio) {
-      audio.pause()
-      audio.currentTime = 0
-    }
+    stopAudio()
 
     if (libroParam) {
       const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
@@ -97,9 +106,15 @@ export function BibleReader() {
   const [showBookSelector, setShowBookSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"scroll" | "book">("scroll")
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
   
+  // Audio states
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [playingVerse, setPlayingVerse] = useState<number | null>(null)
+  const [currentVoice, setCurrentVoice] = useState<"alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer">("alloy")
+  const [audioCache, setAudioCache] = useState<Record<string, string>>({})
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null)
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false)
+
   const { addXP, completeChallenge } = useUserProgress()
   const { fontSize } = useSettings()
 
@@ -166,6 +181,99 @@ export function BibleReader() {
     setSelectedVerses([])
   }
 
+  // Audio Logic
+  useEffect(() => {
+    // Cleanup audio on unmount
+    return () => {
+      if (audioElement) {
+        audioElement.pause()
+        audioElement.src = ""
+      }
+    }
+  }, [audioElement])
+
+  const stopAudio = () => {
+    if (audioElement) {
+      audioElement.pause()
+    }
+    setIsPlaying(false)
+    setPlayingVerse(null)
+  }
+
+  const playVerseAudio = async (verseNum: number) => {
+    if (!chapterData) return
+
+    const verse = chapterData.vers.find(v => parseInt(v.number) === verseNum)
+    if (!verse) {
+      // Fin del capítulo
+      stopAudio()
+      return
+    }
+
+    setPlayingVerse(verseNum)
+    setIsPlaying(true)
+    setIsLoadingAudio(true)
+
+    try {
+      // Scroll al versículo
+      const element = document.getElementById(`verse-${verseNum}`)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+
+      // Check cache
+      const cacheKey = `${selectedBook.id}-${selectedChapter}-${verseNum}-${currentVoice}`
+      let url = audioCache[cacheKey]
+
+      if (!url) {
+        const { audio } = await generateVerseAudio(verse.verse, currentVoice)
+        url = `data:audio/mp3;base64,${audio}`
+        setAudioCache(prev => ({ ...prev, [cacheKey]: url }))
+      }
+
+      // Play audio
+      if (audioElement) {
+        audioElement.pause()
+        audioElement.src = url
+        audioElement.play().catch(e => console.error("Error playing:", e))
+        
+        audioElement.onended = () => {
+           // Play next verse
+           playVerseAudio(verseNum + 1)
+        }
+      } else {
+        const newAudio = new Audio(url)
+        newAudio.play().catch(e => console.error("Error playing:", e))
+        newAudio.onended = () => {
+           playVerseAudio(verseNum + 1)
+        }
+        setAudioElement(newAudio)
+      }
+      
+    } catch (error) {
+      console.error(error)
+      toast.error("Error al reproducir audio")
+      stopAudio()
+    } finally {
+      setIsLoadingAudio(false)
+    }
+  }
+
+  const togglePlayPause = () => {
+    if (isPlaying) {
+      if (audioElement) audioElement.pause()
+      setIsPlaying(false)
+    } else {
+      if (playingVerse && audioElement) {
+        audioElement.play()
+        setIsPlaying(true)
+      } else {
+        // Start from beginning or current verse
+        playVerseAudio(playingVerse || 1)
+      }
+    }
+  }
+
   // Navegación entre capítulos
   const nextChapter = () => {
     if (selectedChapter < selectedBook.capitulos) {
@@ -175,9 +283,7 @@ export function BibleReader() {
       // TODO: Implementar lógica para saltar al siguiente libro
     }
     setSelectedVerses([])
-    // Resetear audio
-    setAudioUrl(null)
-    setIsPlaying(false)
+    stopAudio()
   }
 
   const prevChapter = () => {
@@ -185,53 +291,7 @@ export function BibleReader() {
       setSelectedChapter(prev => prev - 1)
     }
     setSelectedVerses([])
-    // Resetear audio
-    setAudioUrl(null)
-    setIsPlaying(false)
-  }
-
-  const handleListenChapter = async () => {
-    if (isPlaying && audioUrl) {
-      const audio = document.getElementById("chapter-audio") as HTMLAudioElement
-      audio.pause()
-      setIsPlaying(false)
-      return
-    }
-
-    if (audioUrl) {
-      const audio = document.getElementById("chapter-audio") as HTMLAudioElement
-      audio.play()
-      setIsPlaying(true)
-      return
-    }
-
-    try {
-      setIsPlaying(true)
-      toast.info("Generando audio del capítulo...")
-      
-      // Construir el texto completo del capítulo
-      const fullText = chapterData?.vers.map(v => v.verse).join(" ") || ""
-      
-      // Limitar caracteres para evitar errores de API (OpenAI tiene límite)
-      // En una app real, se debería hacer streaming o dividir en partes
-      const truncatedText = fullText.slice(0, 4096) 
-      
-      const { audio } = await generateVerseAudio(truncatedText, "alloy") // Usar voz 'alloy' para diferenciar
-      const url = `data:audio/mp3;base64,${audio}`
-      setAudioUrl(url)
-      
-      setTimeout(() => {
-        const audioElement = document.getElementById("chapter-audio") as HTMLAudioElement
-        if (audioElement) {
-          audioElement.play()
-          audioElement.onended = () => setIsPlaying(false)
-        }
-      }, 100)
-    } catch (error) {
-      console.error(error)
-      setIsPlaying(false)
-      toast.error("Error al generar el audio")
-    }
+    stopAudio()
   }
 
   // Renderizado del selector de libros
@@ -319,14 +379,17 @@ export function BibleReader() {
               {leftColumn.map((verse) => {
                 const verseNum = parseInt(verse.number)
                 const isSelected = selectedVerses.includes(verseNum)
+                const isPlayingVerse = playingVerse === verseNum
                 const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
                 return (
                   <span 
                     key={verse.id || verse.number}
+                    id={`verse-${verseNum}`}
                     onClick={() => toggleVerseSelection(verseNum)}
                     className={cn(
-                      "inline transition-colors cursor-pointer hover:bg-muted/50",
+                      "inline transition-all duration-300 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1",
                       isSelected && "bg-primary/10",
+                      isPlayingVerse && "bg-primary/20 shadow-sm ring-1 ring-primary/30",
                       highlightClass
                     )}
                   >
@@ -358,14 +421,17 @@ export function BibleReader() {
               {rightColumn.map((verse) => {
                 const verseNum = parseInt(verse.number)
                 const isSelected = selectedVerses.includes(verseNum)
+                const isPlayingVerse = playingVerse === verseNum
                 const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
                 return (
                   <span 
                     key={verse.id || verse.number}
+                    id={`verse-${verseNum}`}
                     onClick={() => toggleVerseSelection(verseNum)}
                     className={cn(
-                      "inline transition-colors cursor-pointer hover:bg-muted/50",
+                      "inline transition-all duration-300 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1",
                       isSelected && "bg-primary/10",
+                      isPlayingVerse && "bg-primary/20 shadow-sm ring-1 ring-primary/30",
                       highlightClass
                     )}
                   >
@@ -428,21 +494,55 @@ export function BibleReader() {
         </div>
         
         <div className="flex items-center gap-2">
-           {/* Botón de Audio */}
-           <Button
-             variant="ghost"
-             size="icon"
-             className={cn("h-9 w-9 rounded-full", isPlaying && "text-primary bg-primary/10")}
-             onClick={handleListenChapter}
-             disabled={isLoading || isPlaying && !audioUrl}
-             title="Escuchar Capítulo"
-           >
-             {isPlaying && !audioUrl ? (
-               <Loader2 className="w-5 h-5 animate-spin" />
-             ) : (
-               <Volume2 className="w-5 h-5" />
-             )}
-           </Button>
+           {/* Botón de Audio y Configuración */}
+           <div className="flex items-center bg-muted/50 rounded-full p-1 border border-border">
+             <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title="Configurar voz">
+                  <Settings2 className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-60 p-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Voz de lectura</h4>
+                  <p className="text-sm text-muted-foreground">Selecciona el tono de voz.</p>
+                  <Select value={currentVoice} onValueChange={(v: any) => {
+                    stopAudio()
+                    setCurrentVoice(v)
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una voz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
+                      <SelectItem value="echo">Echo (Grave)</SelectItem>
+                      <SelectItem value="fable">Fable (Británico)</SelectItem>
+                      <SelectItem value="onyx">Onyx (Profundo)</SelectItem>
+                      <SelectItem value="nova">Nova (Femenino)</SelectItem>
+                      <SelectItem value="shimmer">Shimmer (Claro)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+             </Popover>
+
+             <Button
+               variant="ghost"
+               size="icon"
+               className={cn("h-9 w-9 rounded-full transition-all", isPlaying && "text-primary bg-primary/10")}
+               onClick={togglePlayPause}
+               disabled={isLoadingAudio}
+               title={isPlaying ? "Pausar" : "Escuchar Capítulo"}
+             >
+               {isLoadingAudio ? (
+                 <Loader2 className="w-5 h-5 animate-spin" />
+               ) : isPlaying ? (
+                 <Pause className="w-5 h-5" />
+               ) : (
+                 <Play className="w-5 h-5 ml-0.5" />
+               )}
+             </Button>
+           </div>
 
            {/* Toggle de Vista */}
            <div className="hidden md:flex items-center border rounded-md bg-muted/50 p-1">
@@ -530,6 +630,7 @@ export function BibleReader() {
               {chapterData?.vers.map((verse) => {
                 const verseNum = parseInt(verse.number)
                 const isSelected = selectedVerses.includes(verseNum)
+                const isPlayingVerse = playingVerse === verseNum
                 const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
                 
                 return (
@@ -538,8 +639,9 @@ export function BibleReader() {
                     key={verse.id || verse.number}
                     onClick={() => toggleVerseSelection(verseNum)}
                     className={cn(
-                      "relative group px-2 py-1 rounded transition-colors cursor-pointer hover:bg-muted/50",
+                      "relative group px-2 py-1 rounded transition-all duration-300 cursor-pointer hover:bg-muted/50",
                       isSelected && "bg-primary/10",
+                      isPlayingVerse && "bg-primary/20 shadow-sm ring-1 ring-primary/30",
                       highlightClass
                     )}
                   >
@@ -578,8 +680,7 @@ export function BibleReader() {
           )}
         </div>
       )}
-      {/* Audio Element oculto */}
-      {audioUrl && <audio id="chapter-audio" src={audioUrl} className="hidden" />}
+      {/* Audio Element oculto ya no es necesario aquí porque se maneja en el estado */}
     </div>
   )
 }
