@@ -66,7 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsAuthenticated(true)
             localStorage.setItem("biblia-viva-user", JSON.stringify(result.user))
             router.push("/")
-            toast.success(`Bienvenido, ${result.user.name}`)
+            
+            // Check if user is returning (created_at is older than a minute maybe, or just logic)
+            // Ideally the action tells us if it was a new registration or existing login
+            // For now, let's assume if we got a user back successfully it's a "Welcome"
+            // But we can improve the message.
+            
+            // Let's modify the action to return isNewUser or we can just say "Bienvenido de nuevo" if we want to be generic but warm.
+            // Or if we check the creation date.
+            const isNew = new Date(result.user.createdAt).getTime() > Date.now() - 60000; // Created in last minute
+            if (isNew) {
+                toast.success(`¡Bienvenido a Biblia Viva, ${result.user.name}!`)
+            } else {
+                toast.success(`¡Bienvenido de nuevo, ${result.user.name}!`)
+            }
         } else {
             toast.error(result.error || "Error al iniciar sesión")
         }
