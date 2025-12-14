@@ -4,15 +4,17 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { dailyVerses, getAllBooksFlat } from "@/lib/bible-data"
-import { Share2, Bookmark, Volume2, Sparkles, Loader2, X, Copy, BookOpen } from "lucide-react"
+import { Share2, Bookmark, Volume2, Sparkles, Loader2, X, Copy, BookOpen, HelpCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { generateVerseImage, generateVerseAudio } from "@/lib/openai-actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useUserProgress } from "@/hooks/use-user-progress"
 import { toast } from "sonner"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export function VerseOfDay() {
+  const router = useRouter()
   const [verse, setVerse] = useState(dailyVerses[0])
   const [isPlaying, setIsPlaying] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
@@ -186,10 +188,21 @@ export function VerseOfDay() {
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="text-sm font-medium text-muted-foreground">Versículo del Día</span>
+            
+            {/* Botón de Ayuda IA */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              title="Explicar con IA"
+              onClick={() => router.push(`/chat?verse=${encodeURIComponent(`${verse.libro} ${verse.capitulo}:${verse.versiculo}`)}&text=${encodeURIComponent(verse.texto)}`)}
+            >
+              <HelpCircle className="w-5 h-5" />
+            </Button>
           </div>
 
           {/* Versículo */}
-          <blockquote className="verse-text text-2xl lg:text-3xl text-foreground mb-4 text-pretty">
+          <blockquote className="verse-text text-2xl lg:text-3xl font-semibold text-blue-950 dark:text-blue-50 mb-4 text-pretty leading-relaxed drop-shadow-sm">
             &ldquo;{verse.texto}&rdquo;
           </blockquote>
 

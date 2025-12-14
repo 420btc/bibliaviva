@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { Send, Sparkles, BookOpen, Lightbulb, Heart, RefreshCw } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion"
 import { chatWithBibleAI } from "@/lib/openai-actions"
 import { toast } from "sonner"
+import { useSearchParams } from "next/navigation"
 
 interface Message {
   id: string
@@ -39,6 +40,59 @@ export function AIChat() {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const searchParams = useSearchParams()
+  const hasInitialized = useRef(false)
+
+  // Efecto para detectar si venimos del Versículo del Día
+  useEffect(() => {
+    const verseRef = searchParams.get("verse")
+    const verseText = searchParams.get("text")
+
+    if (verseRef && verseText && !hasInitialized.current) {
+      hasInitialized.current = true
+      
+      // Crear un mensaje especial de "Versículo del Día"
+      const specialMessage: Message = {
+        id: "verse-context",
+        role: "user",
+        content: `Hola, me gustaría entender mejor este versículo: **${verseRef}**\n\n> "${verseText}"\n\n¿Podrías explicármelo?`,
+        timestamp: new Date()
+      }
+      
+      // Añadirlo inmediatamente y pedir respuesta
+      setMessages(prev => [...prev, specialMessage])
+      
+      // Trigger AI response automatically
+      setTimeout(() => {
+        handleAutoResponse(specialMessage.content)
+      }, 500)
+    }
+  }, [searchParams])
+
+  const handleAutoResponse = async (text: string) => {
+    setIsTyping(true)
+    try {
+      const apiMessages = [
+        ...initialMessages, 
+        { role: "user" as const, content: text }
+      ].map(msg => ({ role: msg.role, content: msg.content }))
+
+      const response = await chatWithBibleAI(apiMessages)
+      
+      const aiResponse: Message = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: response,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, aiResponse])
+    } catch (error) {
+      console.error(error)
+      toast.error("Error al obtener respuesta automática")
+    } finally {
+      setIsTyping(false)
+    }
+  }
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return
@@ -127,7 +181,7 @@ export function AIChat() {
                         className={`${i > 0 ? "mt-2" : ""} ${message.role === "user" ? "text-primary-foreground" : "text-foreground"}`}
                       >
                         {line.startsWith(">") ? (
-                          <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground">
+                          <blockquote className={`border-l-2 pl-3 italic ${message.role === 'user' ? 'border-primary-foreground/30 text-primary-foreground/90' : 'border-primary text-muted-foreground'}`}>
                             {line.slice(1).trim()}
                           </blockquote>
                         ) : line.startsWith("**") ? (
