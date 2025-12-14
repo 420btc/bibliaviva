@@ -23,7 +23,8 @@ import {
   Columns,
   ScrollText,
   Loader2,
-  Settings2
+  Settings2,
+  X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -542,6 +543,19 @@ export function BibleReader() {
                  <Play className="w-5 h-5 ml-0.5" />
                )}
              </Button>
+
+            {/* Botón X para cerrar/cancelar audio */}
+             {(isPlaying || playingVerse !== null) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors ml-1"
+                  onClick={stopAudio}
+                  title="Detener audio y limpiar"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+             )}
            </div>
 
            {/* Toggle de Vista */}

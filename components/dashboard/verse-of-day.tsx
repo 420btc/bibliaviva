@@ -65,9 +65,13 @@ export function VerseOfDay() {
         } catch (storageError) {
           console.warn("Storage quota exceeded, clearing old data and retrying...", storageError)
           try {
-            // Intentar limpiar todo lo que no sea esencial
-            localStorage.removeItem("biblia-viva-daily-verse")
-            localStorage.removeItem("biblia-viva-daily-verse-date")
+            // Limpiar caché de audio que es lo que más ocupa
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('audio-cache-') || key.includes('verse')) {
+                localStorage.removeItem(key)
+              }
+            })
+            
             // Reintentar guardar
             localStorage.setItem("biblia-viva-daily-verse", JSON.stringify(newVerse))
             localStorage.setItem("biblia-viva-daily-verse-date", today)
