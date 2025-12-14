@@ -125,10 +125,29 @@ export function BibleReader() {
   // Guardar posición al cambiar
   useEffect(() => {
     if (selectedBook && selectedChapter) {
-      localStorage.setItem("biblia-viva-last-position", JSON.stringify({
-        bookId: selectedBook.id,
-        chapter: selectedChapter
-      }))
+      try {
+        localStorage.setItem("biblia-viva-last-position", JSON.stringify({
+          bookId: selectedBook.id,
+          chapter: selectedChapter
+        }))
+      } catch (error) {
+        console.warn("Storage quota exceeded when saving position, clearing old cache...", error)
+        try {
+          // Limpiar caché de audio
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('audio-cache-')) {
+              localStorage.removeItem(key)
+            }
+          })
+          // Reintentar
+          localStorage.setItem("biblia-viva-last-position", JSON.stringify({
+            bookId: selectedBook.id,
+            chapter: selectedChapter
+          }))
+        } catch (retryError) {
+          console.error("Failed to save position even after cleanup", retryError)
+        }
+      }
     }
   }, [selectedBook, selectedChapter])
 
@@ -240,8 +259,26 @@ export function BibleReader() {
       addXP(5)
       setSelectedVerses([])
     } catch (error) {
-      console.error("Error saving bookmark", error)
-      toast.error("No se pudo guardar el versículo (Storage full?)")
+      console.warn("Storage quota exceeded when saving bookmark, clearing old cache...", error)
+      try {
+        // Limpiar caché de audio
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('audio-cache-')) {
+            localStorage.removeItem(key)
+          }
+        })
+        
+        // Reintentar guardado
+        const existingBookmarks = JSON.parse(localStorage.getItem("biblia-viva-bookmarks") || "[]")
+        const newBookmarks = [...existingBookmarks, ...versesToSave]
+        localStorage.setItem("biblia-viva-bookmarks", JSON.stringify(newBookmarks))
+        toast.success("Versículo(s) guardado(s) en favoritos")
+        addXP(5)
+        setSelectedVerses([])
+      } catch (retryError) {
+        console.error("Error saving bookmark", retryError)
+        toast.error("No se pudo guardar el versículo (Almacenamiento lleno)")
+      }
     }
   }
 
