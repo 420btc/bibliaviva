@@ -174,73 +174,87 @@ export function AIChat() {
   }
 
   return (
-    <div className="flex flex-col h-[600px] glass-card rounded-2xl border border-primary/20 overflow-hidden">
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+    <div className="flex flex-col h-full w-full glass-card rounded-2xl border border-primary/20 overflow-hidden shadow-sm">
+      <ScrollArea className="flex-1 p-4 md:p-6">
+        <div className="space-y-6 max-w-4xl mx-auto">
           {messages.map((message) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex items-start gap-3 ${message.role === "assistant" ? "" : "flex-row-reverse"}`}
+              className={`flex items-start gap-4 ${message.role === "assistant" ? "" : "flex-row-reverse"}`}
             >
-              <Avatar className={message.role === "assistant" ? "bg-primary/20" : "bg-secondary"}>
+              <Avatar className={`w-10 h-10 border ${message.role === "assistant" ? "bg-primary/10 border-primary/20" : "bg-secondary border-secondary/20"}`}>
                 <AvatarFallback>{message.role === "assistant" ? "AI" : "Tú"}</AvatarFallback>
               </Avatar>
-              <Card
-                className={`p-3 max-w-[80%] ${
-                  message.role === "assistant"
-                    ? "bg-background/80 border-primary/20"
-                    : "bg-primary text-primary-foreground"
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              </Card>
+              <div className={`flex flex-col max-w-[85%] md:max-w-[75%] space-y-1`}>
+                <span className={`text-xs text-muted-foreground ${message.role === "assistant" ? "text-left" : "text-right"}`}>
+                   {message.role === "assistant" ? "Asistente Bíblico" : "Tú"}
+                </span>
+                <Card
+                  className={`p-4 shadow-sm ${
+                    message.role === "assistant"
+                      ? "bg-card/95 border-border/40 text-card-foreground"
+                      : "bg-primary text-primary-foreground border-primary"
+                  }`}
+                >
+                  <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                </Card>
+              </div>
             </motion.div>
           ))}
           {isTyping && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-sm text-muted-foreground p-2">
-              <Sparkles className="w-4 h-4 animate-spin" />
-              Escribiendo...
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-sm text-muted-foreground p-2 pl-14">
+              <Sparkles className="w-4 h-4 animate-spin text-primary" />
+              <span className="animate-pulse">Escribiendo respuesta...</span>
             </motion.div>
           )}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
-      <div className="p-4 bg-background/50 border-t border-border/50">
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-          {suggestedQuestions.map((q, i) => (
-            <Button
-              key={i}
-              variant="outline"
-              size="sm"
-              className="whitespace-nowrap flex gap-2"
-              onClick={() => sendMessage(q.text)}
+      <div className="p-4 md:p-6 bg-background/40 backdrop-blur-md border-t border-border/50">
+        <div className="max-w-4xl mx-auto space-y-4">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mask-fade-right">
+              {suggestedQuestions.map((q, i) => (
+                <Button
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap flex gap-2 rounded-full bg-background/50 hover:bg-background hover:border-primary/50 transition-all shadow-sm"
+                  onClick={() => sendMessage(q.text)}
+                >
+                  <q.icon className="w-3.5 h-3.5 text-primary" />
+                  {q.text}
+                </Button>
+              ))}
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                sendMessage(input)
+              }}
+              className="flex gap-3 items-center relative"
             >
-              <q.icon className="w-3 h-3" />
-              {q.text}
-            </Button>
-          ))}
+              <div className="relative flex-1">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Haz una pregunta sobre la Biblia, teología o vida cristiana..."
+                  className="flex-1 pr-12 h-12 rounded-xl border-primary/20 focus-visible:ring-primary/30 bg-background/60 shadow-inner"
+                  disabled={isTyping}
+                />
+              </div>
+              <Button 
+                type="submit" 
+                size="icon" 
+                disabled={isTyping || !input.trim()} 
+                className="h-12 w-12 rounded-xl gradient-primary shadow-lg hover:shadow-primary/25 transition-all duration-300 shrink-0"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </form>
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            sendMessage(input)
-          }}
-          className="flex gap-2"
-        >
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Haz una pregunta sobre la Biblia..."
-            className="flex-1"
-            disabled={isTyping}
-          />
-          <Button type="submit" size="icon" disabled={isTyping || !input.trim()} className="gradient-primary">
-            <Send className="w-4 h-4" />
-          </Button>
-        </form>
       </div>
     </div>
   )
