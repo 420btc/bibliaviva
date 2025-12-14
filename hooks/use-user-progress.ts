@@ -130,10 +130,23 @@ export function useUserProgress() {
     })
   }
 
+  const completeQuiz = (score: number, totalQuestions: number) => {
+    setProgress((prev) => {
+      const isPerfect = score === totalQuestions
+      // Aquí podríamos verificar insignias también
+      
+      return {
+        ...prev,
+        quizzesCompletados: (prev.quizzesCompletados || 0) + 1
+      }
+    })
+  }
+
   return {
     progress,
     isLoaded,
     addXP,
-    completeChallenge
+    completeChallenge,
+    completeQuiz
   }
 }

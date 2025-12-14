@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { desafiosDiarios } from "@/lib/gamification"
@@ -7,9 +8,11 @@ import { useUserProgress } from "@/hooks/use-user-progress"
 import { CheckCircle2, Circle, Zap } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { DailyQuizModal } from "@/components/quiz/daily-quiz-modal"
 
 export function DailyChallenges() {
   const { progress } = useUserProgress()
+  const [isQuizOpen, setIsQuizOpen] = useState(false)
   
   const desafios = desafiosDiarios.map(d => ({
     ...d,
@@ -53,16 +56,23 @@ export function DailyChallenges() {
                 <Zap className="w-4 h-4" />+{desafio.xp}
               </span>
               {!desafio.completado && (
-                <Link href={desafio.id === "lectura-diaria" ? "/biblia" : "/viaje"}>
-                  <Button size="sm" variant="secondary">
+                desafio.id === "quiz-dia" ? (
+                  <Button size="sm" variant="secondary" onClick={() => setIsQuizOpen(true)}>
                     Ir
                   </Button>
-                </Link>
+                ) : (
+                  <Link href={desafio.id === "lectura-diaria" ? "/biblia" : "/viaje"}>
+                    <Button size="sm" variant="secondary">
+                      Ir
+                    </Button>
+                  </Link>
+                )
               )}
             </div>
           </motion.div>
         ))}
       </Card>
+      <DailyQuizModal open={isQuizOpen} onOpenChange={setIsQuizOpen} />
     </motion.div>
   )
 }
