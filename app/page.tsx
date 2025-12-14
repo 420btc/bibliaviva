@@ -31,18 +31,6 @@ export default function HomePage() {
           </div>
         </div>
         
-        {/* Footer Créditos */}
-        <div className="mt-12 mb-6 flex justify-center">
-          <a 
-            href="https://carlosfr.es" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="group relative inline-flex items-center gap-2 px-6 py-2 rounded-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 font-medium text-sm transition-all duration-300 hover:scale-105 border border-yellow-500/20 hover:border-yellow-500/50"
-          >
-            <span>Web made by:</span>
-            <span className="font-bold underline decoration-yellow-500/30 group-hover:decoration-yellow-500 transition-all">carlosfr.es</span>
-          </a>
-        </div>
       </div>
     </AppShell>
   )
