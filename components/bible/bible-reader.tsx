@@ -889,7 +889,37 @@ export function BibleReader() {
                 </Button>
 
                 <div className="w-px h-6 bg-border mx-2" />
-                <Button variant="ghost" size="icon" title="Copiar">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  title="Compartir"
+                  onClick={() => {
+                    const versesToShare = selectedVerses.sort((a, b) => a - b)
+                    const verseText = versesToShare.map(v => 
+                      chapterData?.vers.find(verse => parseInt(verse.number) === v)?.verse
+                    ).join("\n")
+                    
+                    const reference = `${selectedBook.nombre} ${selectedChapter}:${versesToShare.join(",")}`
+                    const shareText = `"${verseText}" - ${reference} (Biblia Viva)`
+                    
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Biblia Viva',
+                        text: shareText,
+                        url: window.location.href,
+                      })
+                      .then(() => {
+                        completeChallenge('compartir', 10)
+                        toast.success("Versículo compartido con éxito")
+                      })
+                      .catch((error) => console.log('Error sharing', error));
+                    } else {
+                      navigator.clipboard.writeText(shareText)
+                      completeChallenge('compartir', 10)
+                      toast.success("Copiado al portapapeles")
+                    }
+                  }}
+                >
                   <Share2 className="w-4 h-4" />
                 </Button>
                 <Button 

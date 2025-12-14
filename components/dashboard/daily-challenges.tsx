@@ -64,6 +64,7 @@ export function DailyChallenges() {
                   <Link href={
                     desafio.id === "lectura-diaria" ? "/biblia" :
                     desafio.id === "verso-reflexion" ? "/notas" :
+                    desafio.id === "compartir" ? "/biblia" :
                     "/viaje"
                   }>
                     <Button size="sm" variant="secondary">
