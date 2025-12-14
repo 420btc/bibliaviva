@@ -68,41 +68,39 @@ export function ReadingPlans() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="h-full flex flex-col overflow-hidden border-muted">
-              <div className={`h-32 ${plan.image} relative`}>
-                <div className="absolute bottom-4 left-4">
-                  <Badge variant={plan.active ? "default" : "secondary"} className="mb-2">
+            <Card className="h-full flex flex-col border-muted shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start mb-2">
+                  <Badge variant={plan.active ? "default" : "secondary"} className="text-xs">
                     {plan.active ? "En Progreso" : "Disponible"}
                   </Badge>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                     <Clock className="h-3 w-3" /> {plan.duration}
+                  </span>
                 </div>
-              </div>
-              <CardHeader>
-                <CardTitle>{plan.title}</CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  <Clock className="h-3 w-3" /> {plan.duration}
-                </CardDescription>
+                <CardTitle className="text-xl">{plan.title}</CardTitle>
               </CardHeader>
-              <CardContent className="flex-1">
+              <CardContent className="flex-1 pb-4">
                 <p className="text-sm text-muted-foreground mb-4">
                   {plan.description}
                 </p>
                 {plan.active && (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-xs font-medium text-muted-foreground">
                       <span>Progreso</span>
                       <span>{plan.progress}%</span>
                     </div>
-                    <Progress value={plan.progress} className="h-2" />
+                    <Progress value={plan.progress} className="h-1.5" />
                   </div>
                 )}
               </CardContent>
-              <CardFooter>
+              <CardFooter className="pt-0">
                 {plan.active ? (
-                  <Button className="w-full">
+                  <Button className="w-full" size="sm">
                     Continuar Lectura <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" size="sm">
                     Comenzar Plan
                   </Button>
                 )}
