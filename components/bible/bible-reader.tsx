@@ -38,7 +38,7 @@ import { generateVerseAudio } from "@/lib/openai-actions"
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth-provider"
 import { saveBookmarkAction } from "@/actions/bookmarks"
-import { saveProgressAction, getProgressAction } from "@/actions/progress"
+import { saveProgressAction, getProgressAction, markChapterAsReadAction } from "@/actions/progress"
 import {
   Select,
   SelectContent,
@@ -468,15 +468,24 @@ export function BibleReader() {
   }
 
   // Marcar como leído
-  const markAsRead = () => {
+  const markAsRead = async () => {
+    // Optimistic UI update
     toast.success(`Leído: ${selectedBook.nombre} ${selectedChapter}`, {
       description: "¡Excelente progreso! Continúa así."
     })
-    addXP(15) // XP por completar capítulo
-    completeChallenge('lectura-diaria', 100) // Completar desafío diario si aplica
     
-    // Opcional: Navegar al siguiente automáticamente o preguntar
-    // nextChapter()
+    // Update local context
+    addXP(15) 
+    completeChallenge('lectura-diaria', 100)
+
+    // Persist to DB
+    if (user?.id) {
+      try {
+        await markChapterAsReadAction(user.id, selectedBook.id, selectedChapter)
+      } catch (error) {
+        console.error("Failed to mark as read in DB", error)
+      }
+    }
   }
 
   const renderSearchDialog = () => (

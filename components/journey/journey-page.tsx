@@ -1,14 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { insignias, desafiosSemanales, niveles } from "@/lib/gamification"
-import { Trophy, Flame, Star, Target, Lock, CheckCircle2, ChevronRight, Zap, Medal } from "lucide-react"
+import { Trophy, Flame, Star, Target, Lock, CheckCircle2, ChevronRight, Zap, Medal, BookOpen } from "lucide-react"
 import { motion } from "framer-motion"
 import { useUserProgress } from "@/hooks/use-user-progress"
+import { getCompletedChaptersAction } from "@/actions/progress"
+import { useAuth } from "@/components/auth-provider"
+import { bibleBooks, getAllBooksFlat } from "@/lib/bible-data"
 
 const quizQuestions = [
   {
@@ -37,8 +40,33 @@ export function JourneyPage() {
   const [score, setScore] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showResult, setShowResult] = useState(false)
+  
+  // Estado para historial de lecturas
+  const [completedChapters, setCompletedChapters] = useState<any[]>([])
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
   const { progress: user, addXP } = useUserProgress()
+  const { user: authUser } = useAuth()
+
+  // Cargar historial de lecturas
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (authUser?.id) {
+        setIsLoadingHistory(true)
+        try {
+          const res = await getCompletedChaptersAction(authUser.id)
+          if (res.success && res.data) {
+            setCompletedChapters(res.data)
+          }
+        } catch (e) {
+          console.error(e)
+        } finally {
+          setIsLoadingHistory(false)
+        }
+      }
+    }
+    loadHistory()
+  }, [authUser])
 
   const handleAnswer = (index: number) => {
     setSelectedAnswer(index)
@@ -137,6 +165,7 @@ export function JourneyPage() {
       <Tabs defaultValue="insignias" className="space-y-6">
         <TabsList className="bg-secondary">
           <TabsTrigger value="insignias">Insignias</TabsTrigger>
+          <TabsTrigger value="leidos">Leídos</TabsTrigger>
           <TabsTrigger value="niveles">Niveles</TabsTrigger>
           <TabsTrigger value="quiz">Quiz del Día</TabsTrigger>
           <TabsTrigger value="desafios">Desafíos</TabsTrigger>
@@ -177,8 +206,56 @@ export function JourneyPage() {
           </div>
         </TabsContent>
 
-        {/* Niveles */}
-        <TabsContent value="niveles">
+        {/* Capítulos Leídos */}
+        <TabsContent value="leidos">
+          <Card className="glass-card p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">Capítulos Completados</h3>
+                <p className="text-sm text-muted-foreground">
+                  Has leído {user.capituslosCompletados} capítulos en total
+                </p>
+              </div>
+            </div>
+
+            {completedChapters.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {completedChapters.map((chapter, i) => {
+                    const book = bibleBooks.antiguoTestamento.find(b => b.id === chapter.bookId) || 
+                                 bibleBooks.nuevoTestamento.find(b => b.id === chapter.bookId) || 
+                                 getAllBooksFlat().find(b => b.id === chapter.bookId)
+                    
+                    const bookName = book?.nombre || "Libro desconocido"
+                    
+                    return (
+                      <div key={i} className="p-4 border rounded-lg bg-secondary/30 border-border animate-in fade-in slide-in-from-bottom-2">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="font-semibold text-foreground">{bookName} {chapter.chapter}</span>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Leído el {new Date(chapter.completedAt).toLocaleDateString()}
+                          </p>
+                      </div>
+                    )
+                 })}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                <p>Aún no has completado ningún capítulo.</p>
+                <Button variant="link" className="mt-2 text-primary" onClick={() => window.location.href = '/biblia'}>
+                  Ir a la Biblia
+                </Button>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        {/* Niveles */}        <TabsContent value="niveles">
           <div className="space-y-3">
             {niveles.map((nivel, index) => {
               const isCurrentLevel = user.nivel === nivel.nivel
