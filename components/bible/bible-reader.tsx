@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react"
 import useSWR from "swr"
-import { bibleBooks, type BibleBookLocal } from "@/lib/bible-data"
-import { getChapter, type ChapterResponse } from "@/lib/bible-api"
+import { bibleBooks, getAllBooksFlat, type BibleBookLocal } from "@/lib/bible-data"
+import { getChapter, searchBible, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
@@ -186,6 +186,12 @@ export function BibleReader() {
   const [showBookSelector, setShowBookSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"scroll" | "book">("scroll")
+  
+  // Search states
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQueryText, setSearchQueryText] = useState("")
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   
   // Audio states
   const [isPlaying, setIsPlaying] = useState(false)
@@ -446,6 +452,104 @@ export function BibleReader() {
     stopAudio()
   }
 
+  // Búsqueda de texto
+  const handleSearch = async () => {
+    if (!searchQueryText.trim()) return
+    
+    setIsSearching(true)
+    try {
+      const response = await searchBible(searchQueryText)
+      setSearchResults(response.results)
+    } catch (error) {
+      console.error("Error searching bible:", error)
+      toast.error("Error al buscar en la Biblia")
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const goToResult = (result: SearchResult) => {
+    // Bolls API devuelve book ID (1-66). 
+    // Usamos el ID para encontrar nuestro libro local.
+    const flatBooks = getAllBooksFlat()
+    const targetBook = flatBooks[result.book - 1]
+    
+    if (targetBook) {
+      setSelectedBook(targetBook)
+      setSelectedChapter(result.chapter)
+      
+      // Marcar el versículo y hacer scroll
+      setSelectedVerses([result.verse])
+      
+      setTimeout(() => {
+        const element = document.getElementById(`verse-${result.verse}`)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 1000)
+      
+      setIsSearchOpen(false)
+    }
+  }
+
+  const renderSearchDialog = () => (
+    <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex flex-col p-4 animate-in fade-in">
+      <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto w-full gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="Buscar palabra o frase..." 
+            value={searchQueryText}
+            onChange={(e) => setSearchQueryText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="pl-10"
+            autoFocus
+          />
+        </div>
+        <Button onClick={handleSearch} disabled={isSearching}>
+          {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : "Buscar"}
+        </Button>
+        <Button variant="ghost" onClick={() => setIsSearchOpen(false)}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      
+      <ScrollArea className="flex-1 max-w-2xl mx-auto w-full">
+        {searchResults.length > 0 ? (
+          <div className="space-y-2 pb-20">
+            {searchResults.map((result) => {
+               const flatBooks = getAllBooksFlat()
+               const bookName = flatBooks[result.book - 1]?.nombre || "Desconocido"
+               
+               return (
+                <Card 
+                  key={result.pk} 
+                  className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => goToResult(result)}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="font-semibold text-primary">
+                      {bookName} {result.chapter}:{result.verse}
+                    </h4>
+                  </div>
+                  <div 
+                    className="text-sm text-muted-foreground line-clamp-2"
+                    dangerouslySetInnerHTML={{ __html: result.text }} 
+                  />
+                </Card>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+            <Search className="w-12 h-12 mb-4 opacity-20" />
+            <p>Escribe una palabra para buscar en la Biblia</p>
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  )
+
   // Renderizado del selector de libros
   const renderBookSelector = () => (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col p-4 animate-in fade-in">
@@ -612,6 +716,7 @@ export function BibleReader() {
   return (
     <div className="flex flex-col h-full bg-background relative overflow-hidden">
       {showBookSelector && renderBookSelector()}
+      {isSearchOpen && renderSearchDialog()}
       
       {/* Header de navegación */}
       <header className="border-b border-border p-4 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -620,6 +725,11 @@ export function BibleReader() {
             <Book className="w-4 h-4" />
             <span className="font-semibold">{selectedBook.nombre}</span>
           </Button>
+
+          <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} title="Buscar">
+            <Search className="w-4 h-4" />
+          </Button>
+
           <div className="flex items-center border rounded-md overflow-hidden">
             <Button 
               variant="ghost" 

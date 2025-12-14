@@ -289,8 +289,58 @@ export const bookNameMap: Record<string, string> = {
   apocalipsis: "apocalipsis",
 }
 
-// Función auxiliar para normalizar nombres de libros
 export function normalizeBookName(name: string): string {
   const normalized = name.toLowerCase().trim()
   return bookNameMap[normalized] || normalized.replace(/\s+/g, "-")
+}
+
+export interface SearchResult {
+  pk: number
+  translation: string
+  book: number
+  chapter: number
+  verse: number
+  text: string
+}
+
+export interface SearchResponse {
+  exact_matches: number
+  total: number
+  results: SearchResult[]
+  page: number
+  total_pages: number
+}
+
+// Buscar en la Biblia
+export async function searchBible(
+  query: string, 
+  version: string = "RV1960", 
+  page: number = 1,
+  limit: number = 20
+): Promise<SearchResponse> {
+  // Mapeo simple de versiones comunes a códigos Bolls
+  const versionMap: Record<string, string> = {
+    "rv1960": "RV1960",
+    "nvi": "NVI",
+    "dhh": "DHH",
+    "bla": "LBLA"
+  }
+  
+  const bollsVersion = versionMap[version.toLowerCase()] || "RV1960"
+  
+  const res = await fetch(
+    `https://bolls.life/v2/find/${bollsVersion}?search=${encodeURIComponent(query)}&match_case=false&match_whole=false&limit=${limit}&page=${page}`
+  )
+  
+  if (!res.ok) throw new Error(`Error al buscar "${query}" en ${version}`)
+    
+  const data = await res.json()
+  
+  return {
+    exact_matches: data.exact_matches || 0,
+    total: data.total || 0,
+    results: data.results || [],
+    page: page,
+    total_pages: Math.ceil((data.total || 0) / limit)
+  }
 }
