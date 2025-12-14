@@ -17,6 +17,13 @@ export function useUserProgress() {
         const parsed = JSON.parse(saved)
         let loadedProgress = { ...defaultUserProgress, ...parsed }
         
+        // Detección de datos "fake" antiguos (Nivel 3 con 450 XP exactos y 8 quizzes)
+        // Si el usuario tiene estos datos exactos, asumimos que son los datos de prueba y los reseteamos
+        if (loadedProgress.nivel === 3 && loadedProgress.xp === 450 && loadedProgress.quizzesCompletados === 8) {
+           console.log("Detectados datos de prueba antiguos. Reseteando a progreso inicial.")
+           loadedProgress = { ...defaultUserProgress }
+        }
+
         // Verificar si es un nuevo día para resetear desafíos
         const today = new Date().toISOString().split('T')[0]
         if (loadedProgress.fechaUltimoDesafio !== today) {

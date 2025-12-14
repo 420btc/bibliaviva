@@ -136,17 +136,17 @@ export function calcularNivel(xp: number): { nivel: number; nombre: string; prog
 }
 
 export const defaultUserProgress: UserProgress = {
-  nivel: 3,
-  xp: 450,
-  xpParaSiguienteNivel: 600,
-  racha: 12,
-  mejorRacha: 21,
-  versiculosLeidos: 247,
-  capituslosCompletados: 18,
-  librosCompletados: 2,
-  quizzesCompletados: 8,
-  insignias: ["primera-lectura", "racha-7", "explorador-nt"],
-  titulo: "Buscador de Sabiduría",
+  nivel: 1,
+  xp: 0,
+  xpParaSiguienteNivel: 100,
+  racha: 0,
+  mejorRacha: 0,
+  versiculosLeidos: 0,
+  capituslosCompletados: 0,
+  librosCompletados: 0,
+  quizzesCompletados: 0,
+  insignias: [],
+  titulo: "Explorador del Génesis",
   desafiosDiariosCompletados: [],
   fechaUltimoDesafio: new Date().toISOString().split('T')[0],
 }
