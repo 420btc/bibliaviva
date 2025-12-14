@@ -17,7 +17,9 @@ import {
   Share2, 
   Bookmark,
   Volume2,
-  Menu
+  Menu,
+  Columns,
+  ScrollText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -44,6 +46,7 @@ export function BibleReader() {
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
   const [showBookSelector, setShowBookSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewMode, setViewMode] = useState<"scroll" | "book">("scroll")
   
   const { addXP, completeChallenge } = useUserProgress()
   const { fontSize } = useSettings()
@@ -191,6 +194,101 @@ export function BibleReader() {
     </div>
   )
 
+  const BookView = () => {
+    // Dividir versículos en dos columnas aproximadas
+    const verses = chapterData?.vers || []
+    const midPoint = Math.ceil(verses.length / 2)
+    const leftColumn = verses.slice(0, midPoint)
+    const rightColumn = verses.slice(midPoint)
+
+    return (
+      <div className="flex-1 overflow-hidden p-4 md:p-8 w-full h-full bg-[#fdfbf7] dark:bg-[#000000]">
+        <div className="h-full max-w-7xl mx-auto bg-card rounded-lg shadow-xl border border-border flex flex-col md:flex-row overflow-hidden relative">
+          {/* Sombra central del libro */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-12 -ml-6 bg-gradient-to-r from-transparent via-black/5 to-transparent z-10 hidden md:block pointer-events-none" />
+          
+          {/* Página Izquierda */}
+          <div className="flex-1 p-8 md:pr-12 overflow-y-auto border-r border-border/10">
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-serif font-bold text-foreground/80">{selectedBook.nombre}</h2>
+              <span className="text-xs text-muted-foreground uppercase tracking-widest">Capítulo {selectedChapter}</span>
+            </div>
+            <div className="space-y-1 text-justify">
+              {leftColumn.map((verse) => {
+                const verseNum = parseInt(verse.number)
+                const isSelected = selectedVerses.includes(verseNum)
+                const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
+                return (
+                  <span 
+                    key={verse.id || verse.number}
+                    onClick={() => toggleVerseSelection(verseNum)}
+                    className={cn(
+                      "inline transition-colors cursor-pointer hover:bg-muted/50",
+                      isSelected && "bg-primary/10",
+                      highlightClass
+                    )}
+                  >
+                    <sup className="text-[0.6em] text-muted-foreground font-medium mr-1 select-none">{verse.number}</sup>
+                    <span style={{ fontSize: `${fontSize}px` }} className="leading-relaxed font-serif text-foreground">
+                      {verse.verse}{" "}
+                    </span>
+                  </span>
+                )
+              })}
+            </div>
+            <div className="mt-8 text-center text-xs text-muted-foreground">
+              {selectedChapter > 1 && (
+                <Button variant="ghost" size="sm" onClick={prevChapter} className="text-muted-foreground hover:text-primary">
+                  <ChevronLeft className="w-3 h-3 mr-1" /> Anterior
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Página Derecha */}
+          <div className="flex-1 p-8 md:pl-12 overflow-y-auto bg-card/50">
+             {/* En móvil, mostrar título de continuación si es necesario, en PC oculto */}
+             <div className="md:hidden mb-6 text-center border-t border-border pt-6">
+                <span className="text-xs text-muted-foreground uppercase tracking-widest">Continuación</span>
+             </div>
+
+             <div className="space-y-1 text-justify">
+              {rightColumn.map((verse) => {
+                const verseNum = parseInt(verse.number)
+                const isSelected = selectedVerses.includes(verseNum)
+                const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
+                return (
+                  <span 
+                    key={verse.id || verse.number}
+                    onClick={() => toggleVerseSelection(verseNum)}
+                    className={cn(
+                      "inline transition-colors cursor-pointer hover:bg-muted/50",
+                      isSelected && "bg-primary/10",
+                      highlightClass
+                    )}
+                  >
+                    <sup className="text-[0.6em] text-muted-foreground font-medium mr-1 select-none">{verse.number}</sup>
+                    <span style={{ fontSize: `${fontSize}px` }} className="leading-relaxed font-serif text-foreground">
+                      {verse.verse}{" "}
+                    </span>
+                  </span>
+                )
+              })}
+            </div>
+
+            <div className="mt-8 text-center text-xs text-muted-foreground">
+              {selectedChapter < selectedBook.capitulos && (
+                <Button variant="ghost" size="sm" onClick={nextChapter} className="text-muted-foreground hover:text-primary">
+                  Siguiente <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full bg-background relative overflow-hidden">
       {showBookSelector && renderBookSelector()}
@@ -227,112 +325,140 @@ export function BibleReader() {
           </div>
         </div>
         
-        {/* Acciones de versículos seleccionados */}
-        <AnimatePresence>
-          {selectedVerses.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex items-center gap-1"
-            >
-              {highlightColors.map(color => (
-                <button
-                  key={color.name}
-                  onClick={() => handleHighlight(color.class)}
-                  className={`w-6 h-6 rounded-full border border-border transition-transform hover:scale-110`}
-                  style={{ backgroundColor: color.color }}
-                  title={`Resaltar ${color.name}`}
-                />
-              ))}
-              <div className="w-px h-6 bg-border mx-2" />
-              <Button variant="ghost" size="icon" title="Copiar">
-                <Share2 className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" title="Guardar">
-                <Bookmark className="w-4 h-4" />
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="flex items-center gap-2">
+           {/* Toggle de Vista */}
+           <div className="hidden md:flex items-center border rounded-md bg-muted/50 p-1">
+             <Button
+               variant="ghost"
+               size="icon"
+               className={cn("h-7 w-7 rounded-sm", viewMode === "scroll" && "bg-background shadow-sm")}
+               onClick={() => setViewMode("scroll")}
+               title="Vista Scroll"
+             >
+               <ScrollText className="w-4 h-4" />
+             </Button>
+             <Button
+               variant="ghost"
+               size="icon"
+               className={cn("h-7 w-7 rounded-sm", viewMode === "book" && "bg-background shadow-sm")}
+               onClick={() => setViewMode("book")}
+               title="Vista Libro"
+             >
+               <Columns className="w-4 h-4" />
+             </Button>
+           </div>
+
+           {/* Acciones de versículos seleccionados */}
+           <AnimatePresence>
+            {selectedVerses.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="flex items-center gap-1"
+              >
+                {highlightColors.map(color => (
+                  <button
+                    key={color.name}
+                    onClick={() => handleHighlight(color.class)}
+                    className={`w-6 h-6 rounded-full border border-border transition-transform hover:scale-110`}
+                    style={{ backgroundColor: color.color }}
+                    title={`Resaltar ${color.name}`}
+                  />
+                ))}
+                <div className="w-px h-6 bg-border mx-2" />
+                <Button variant="ghost" size="icon" title="Copiar">
+                  <Share2 className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" title="Guardar">
+                  <Bookmark className="w-4 h-4" />
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </header>
 
       {/* Área de lectura */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full">
-        {isLoading ? (
-          <div className="space-y-4 animate-pulse">
-            {[...Array(10)].map((_, i) => (
-              <div key={i} className="flex gap-4">
-                <div className="w-6 h-4 bg-muted rounded" />
-                <div className="flex-1 h-4 bg-muted rounded" />
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="text-center p-8 text-muted-foreground">
-            <p>Error al cargar el capítulo. Por favor intenta de nuevo.</p>
-            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
-              Reintentar
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-1 pb-20">
-            <div className="mb-8 text-center">
-              <h1 className="text-3xl font-bold font-serif text-foreground mb-2">
-                {selectedBook.nombre} {selectedChapter}
-              </h1>
-              <p className="text-sm text-muted-foreground uppercase tracking-widest">Reina-Valera 1960</p>
-            </div>
-            
-            {chapterData?.vers.map((verse) => {
-              const verseNum = parseInt(verse.number)
-              const isSelected = selectedVerses.includes(verseNum)
-              const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
-              
-              return (
-                <div 
-                  key={verse.id || verse.number}
-                  onClick={() => toggleVerseSelection(verseNum)}
-                  className={cn(
-                    "relative group px-2 py-1 rounded transition-colors cursor-pointer hover:bg-muted/50",
-                    isSelected && "bg-primary/10",
-                    highlightClass
-                  )}
-                >
-                  <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
-                    {verse.number}
-                  </span>
-                  <p 
-                    className="leading-relaxed font-serif text-foreground"
-                    style={{ fontSize: `${fontSize}px` }}
-                  >
-                    {verse.verse}
-                  </p>
+      {viewMode === "book" && !isLoading && !error ? (
+        <BookView />
+      ) : (
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full">
+          {isLoading ? (
+            <div className="space-y-4 animate-pulse">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="w-6 h-4 bg-muted rounded" />
+                  <div className="flex-1 h-4 bg-muted rounded" />
                 </div>
-              )
-            })}
-            
-            <div className="flex justify-between mt-12 pt-8 border-t border-border">
-              <Button 
-                variant="outline" 
-                onClick={prevChapter}
-                disabled={selectedChapter <= 1}
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Anterior
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={nextChapter}
-                disabled={selectedChapter >= selectedBook.capitulos}
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4 ml-2" />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center p-8 text-muted-foreground">
+              <p>Error al cargar el capítulo. Por favor intenta de nuevo.</p>
+              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+                Reintentar
               </Button>
             </div>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="space-y-1 pb-20">
+              <div className="mb-8 text-center">
+                <h1 className="text-3xl font-bold font-serif text-foreground mb-2">
+                  {selectedBook.nombre} {selectedChapter}
+                </h1>
+                <p className="text-sm text-muted-foreground uppercase tracking-widest">Reina-Valera 1960</p>
+              </div>
+              
+              {chapterData?.vers.map((verse) => {
+                const verseNum = parseInt(verse.number)
+                const isSelected = selectedVerses.includes(verseNum)
+                const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
+                
+                return (
+                  <div 
+                    key={verse.id || verse.number}
+                    onClick={() => toggleVerseSelection(verseNum)}
+                    className={cn(
+                      "relative group px-2 py-1 rounded transition-colors cursor-pointer hover:bg-muted/50",
+                      isSelected && "bg-primary/10",
+                      highlightClass
+                    )}
+                  >
+                    <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
+                      {verse.number}
+                    </span>
+                    <p 
+                      className="leading-relaxed font-serif text-foreground"
+                      style={{ fontSize: `${fontSize}px` }}
+                    >
+                      {verse.verse}
+                    </p>
+                  </div>
+                )
+              })}
+              
+              <div className="flex justify-between mt-12 pt-8 border-t border-border">
+                <Button 
+                  variant="outline" 
+                  onClick={prevChapter}
+                  disabled={selectedChapter <= 1}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Anterior
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={nextChapter}
+                  disabled={selectedChapter >= selectedBook.capitulos}
+                >
+                  Siguiente
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
