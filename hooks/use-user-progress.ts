@@ -2,56 +2,78 @@
 
 import { useState, useEffect } from "react"
 import { defaultUserProgress, type UserProgress, calcularNivel } from "@/lib/gamification"
+import { useAuth } from "@/components/auth-provider"
+import { getUserProgressAction, saveUserProgressAction } from "@/actions/gamification"
 
 const STORAGE_KEY = "biblia-viva-progress"
 
 export function useUserProgress() {
   const [progress, setProgress] = useState<UserProgress>(defaultUserProgress)
   const [isLoaded, setIsLoaded] = useState(false)
+  const { user } = useAuth()
 
-  // Cargar progreso al iniciar
+  // Cargar progreso
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        let loadedProgress = { ...defaultUserProgress, ...parsed }
-        
-        // Detección de datos "fake" antiguos
-        // Verificamos patrones específicos de los datos de prueba anteriores
-        const isFakeData = 
-          (loadedProgress.nivel === 3 && loadedProgress.xp === 450) ||
-          (loadedProgress.versiculosLeidos === 247) ||
-          (loadedProgress.quizzesCompletados === 8 && loadedProgress.nivel === 3);
+    const loadProgress = async () => {
+      let loadedProgress = defaultUserProgress
 
-        if (isFakeData) {
-           console.log("Detectados datos de prueba antiguos. Reseteando a progreso inicial.")
-           loadedProgress = { ...defaultUserProgress }
+      // 1. Intentar cargar desde DB si hay usuario
+      if (user?.id) {
+        try {
+          const dbResult = await getUserProgressAction(user.id)
+          if (dbResult.success && dbResult.data) {
+            loadedProgress = dbResult.data
+            
+            // Si es un usuario nuevo en DB (XP 0), verificar si hay datos locales para migrar
+            if (loadedProgress.xp === 0 && loadedProgress.nivel === 1) {
+                const local = localStorage.getItem(STORAGE_KEY)
+                if (local) {
+                    try {
+                        const parsed = JSON.parse(local)
+                        loadedProgress = { ...loadedProgress, ...parsed }
+                        // Guardar inmediatamente en DB
+                        await saveUserProgressAction(user.id, loadedProgress)
+                    } catch (e) { console.error("Error migrando datos locales", e) }
+                }
+            }
+          }
+        } catch (e) {
+          console.error("Error cargando desde DB", e)
         }
-
-        // Verificar si es un nuevo día para resetear desafíos
-        const today = new Date().toISOString().split('T')[0]
-        if (loadedProgress.fechaUltimoDesafio !== today) {
-           loadedProgress = {
-             ...loadedProgress,
-             desafiosDiariosCompletados: [],
-             fechaUltimoDesafio: today
-           }
+      } else {
+        // 2. Fallback a localStorage si no hay usuario o falló DB
+        const saved = localStorage.getItem(STORAGE_KEY)
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved)
+            loadedProgress = { ...defaultUserProgress, ...parsed }
+          } catch (e) {
+            console.error("Error al cargar progreso local:", e)
+          }
         }
-        
-        setProgress(loadedProgress)
-      } catch (e) {
-        console.error("Error al cargar progreso:", e)
       }
+
+      // Validaciones y reseteos diarios (lógica original)
+      const today = new Date().toISOString().split('T')[0]
+      if (loadedProgress.fechaUltimoDesafio !== today) {
+         loadedProgress = {
+           ...loadedProgress,
+           desafiosDiariosCompletados: [],
+           fechaUltimoDesafio: today
+         }
+      }
+
+      setProgress(loadedProgress)
+      setIsLoaded(true)
     }
-    setIsLoaded(true)
-  }, [])
+
+    loadProgress()
+  }, [user])
 
   // Guardar progreso cuando cambia
   useEffect(() => {
     if (isLoaded) {
-      // Sanitize progress to ensure only expected fields are saved
-      // and avoid saving potentially large accidental objects
+      // 1. Guardar en localStorage (backup/offline)
       const cleanProgress: UserProgress = {
         nivel: progress.nivel,
         xp: progress.xp,
@@ -69,30 +91,27 @@ export function useUserProgress() {
       }
 
       try {
-        const serialized = JSON.stringify(cleanProgress)
-        localStorage.setItem(STORAGE_KEY, serialized)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanProgress))
       } catch (e) {
         console.warn("Failed to save progress to localStorage:", e)
-        
-        // Attempt recovery by clearing the specific key first
-        try {
-          localStorage.removeItem(STORAGE_KEY)
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanProgress))
-        } catch (retryError) {
-           console.warn("Retry failed. LocalStorage might be full.")
-        }
+      }
+
+      // 2. Guardar en DB si hay usuario
+      if (user?.id) {
+        saveUserProgressAction(user.id, cleanProgress).catch(e => 
+            console.error("Failed to save progress to DB", e)
+        )
       }
     }
-  }, [progress, isLoaded])
+  }, [progress, isLoaded, user])
 
   const addXP = (amount: number) => {
     setProgress((prev) => {
       const newXP = prev.xp + amount
-      const { nivel, nombre, progreso } = calcularNivel(newXP)
+      const { nivel, nombre } = calcularNivel(newXP)
       
       // Verificar si subió de nivel
       if (nivel > prev.nivel) {
-        // Aquí se podría disparar una notificación de nivel nuevo
         console.log(`¡Subiste al nivel ${nivel}: ${nombre}!`)
       }
 
@@ -101,52 +120,33 @@ export function useUserProgress() {
         xp: newXP,
         nivel,
         titulo: nombre,
-        // Recalculamos xpParaSiguienteNivel basado en el nuevo nivel
-        // (Esto es una simplificación, idealmente vendría de la config de niveles)
+        // Recalculate xpParaSiguienteNivel logic if needed, 
+        // but it seems mostly derived in UI or helper.
       }
     })
   }
 
-  const completeChallenge = (challengeId: string, xpReward: number) => {
-    setProgress((prev) => {
-      if (prev.desafiosDiariosCompletados?.includes(challengeId)) {
-        return prev
-      }
-
-      const newXP = prev.xp + xpReward
-      const { nivel, nombre } = calcularNivel(newXP)
-      
-      if (nivel > prev.nivel) {
-        console.log(`¡Subiste al nivel ${nivel}: ${nombre}!`)
-      }
-
-      return {
+  const completeChallenge = (id: string, xp: number) => {
+    if (progress.desafiosDiariosCompletados.includes(id)) return
+    
+    addXP(xp)
+    setProgress(prev => ({
         ...prev,
-        xp: newXP,
-        nivel,
-        titulo: nombre,
-        desafiosDiariosCompletados: [...(prev.desafiosDiariosCompletados || []), challengeId]
-      }
-    })
+        desafiosDiariosCompletados: [...prev.desafiosDiariosCompletados, id]
+    }))
   }
 
   const completeQuiz = (score: number, totalQuestions: number) => {
-    setProgress((prev) => {
-      const isPerfect = score === totalQuestions
-      // Aquí podríamos verificar insignias también
+      const percentage = totalQuestions > 0 ? (score / totalQuestions) * 100 : 0
       
-      return {
-        ...prev,
-        quizzesCompletados: (prev.quizzesCompletados || 0) + 1
-      }
-    })
+      setProgress(prev => ({
+          ...prev,
+          quizzesCompletados: prev.quizzesCompletados + 1
+      }))
+      
+      // Bonus XP for perfect score
+      addXP(percentage >= 100 ? 50 : 20)
   }
 
-  return {
-    progress,
-    isLoaded,
-    addXP,
-    completeChallenge,
-    completeQuiz
-  }
+  return { progress, addXP, setProgress, completeChallenge, completeQuiz }
 }

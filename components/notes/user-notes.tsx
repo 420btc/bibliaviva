@@ -8,14 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Plus, Search, Trash2, Edit2, Save, X, StickyNote } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { toast } from "sonner"
-
-interface Note {
-  id: string
-  title: string
-  content: string
-  date: string
-  tags: string[]
-}
+import { useAuth } from "@/components/auth-provider"
+import { getUserNotesAction, saveNoteAction, deleteNoteAction, syncNotesAction, type Note } from "@/actions/notes"
 
 const initialNotes: Note[] = [
   {
@@ -40,34 +34,76 @@ export function UserNotes() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [currentNote, setCurrentNote] = useState<Partial<Note>>({})
   const [isEditing, setIsEditing] = useState(false)
+  const { user } = useAuth()
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // Cargar notas (simulado)
+  // Cargar notas
   useEffect(() => {
-    const saved = localStorage.getItem("biblia-viva-notes")
-    if (saved) {
-      setNotes(JSON.parse(saved))
+    const loadNotes = async () => {
+        let loadedNotes: Note[] = []
+        let hasLoadedFromDB = false
+
+        // 1. Load from DB
+        if (user?.id) {
+            try {
+                const dbResult = await getUserNotesAction(user.id)
+                if (dbResult.success && dbResult.data && dbResult.data.length > 0) {
+                    loadedNotes = dbResult.data
+                    hasLoadedFromDB = true
+                }
+            } catch (e) { console.error(e) }
+        }
+
+        // 2. Load from localStorage
+        const saved = localStorage.getItem("biblia-viva-notes")
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved)
+                // Migration: If DB had nothing but local has data, sync local to DB
+                if (!hasLoadedFromDB && parsed.length > 0 && user?.id) {
+                    await syncNotesAction(user.id, parsed)
+                    loadedNotes = parsed
+                } else if (!hasLoadedFromDB) {
+                    // Fallback to local if no DB user or DB error
+                    loadedNotes = parsed
+                }
+            } catch (e) { console.error(e) }
+        }
+
+        if (loadedNotes.length > 0) {
+            setNotes(loadedNotes)
+        }
+        setIsLoaded(true)
     }
-  }, [])
+    loadNotes()
+  }, [user])
 
-  // Guardar notas
+  // Guardar notas (local backup)
   useEffect(() => {
+    if (!isLoaded) return
     try {
       localStorage.setItem("biblia-viva-notes", JSON.stringify(notes))
     } catch (error) {
       console.warn("Storage quota exceeded, cannot save notes", error)
-      toast.error("No hay espacio suficiente para guardar las notas")
+      toast.error("No hay espacio suficiente para guardar las notas localmente")
     }
-  }, [notes])
+  }, [notes, isLoaded])
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!currentNote.title || !currentNote.content) {
       toast.error("El título y el contenido son obligatorios")
       return
     }
 
     if (isEditing && currentNote.id) {
-      setNotes(notes.map(n => n.id === currentNote.id ? { ...n, ...currentNote } as Note : n))
+      const updatedNote = { ...notes.find(n => n.id === currentNote.id), ...currentNote } as Note
+      const updatedNotes = notes.map(n => n.id === currentNote.id ? updatedNote : n)
+      setNotes(updatedNotes)
       toast.success("Nota actualizada")
+      
+      if (user?.id) {
+          saveNoteAction(user.id, updatedNote)
+      }
     } else {
       const newNote: Note = {
         id: Date.now().toString(),
@@ -78,6 +114,10 @@ export function UserNotes() {
       }
       setNotes([newNote, ...notes])
       toast.success("Nota creada")
+      
+      if (user?.id) {
+          saveNoteAction(user.id, newNote)
+      }
     }
     setIsDialogOpen(false)
     setCurrentNote({})
@@ -87,6 +127,9 @@ export function UserNotes() {
   const handleDeleteNote = (id: string) => {
     setNotes(notes.filter(n => n.id !== id))
     toast.success("Nota eliminada")
+    if (user?.id) {
+        deleteNoteAction(user.id, id)
+    }
   }
 
   const openNewNote = () => {
@@ -101,80 +144,89 @@ export function UserNotes() {
     setIsDialogOpen(true)
   }
 
-  const filteredNotes = notes.filter(n => 
-    n.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    n.content.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredNotes = notes.filter(
+    (note) =>
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Mis Notas</h2>
-          <p className="text-muted-foreground">Tus reflexiones y estudios personales.</p>
+      <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar en tus notas..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
-        <Button onClick={openNewNote}>
-          <Plus className="mr-2 h-4 w-4" /> Nueva Nota
+        <Button onClick={openNewNote} className="w-full md:w-auto gradient-primary">
+          <Plus className="mr-2 h-4 w-4" />
+          Nueva Nota
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Buscar en mis notas..." 
-          className="pl-10"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredNotes.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-muted-foreground">
-            <StickyNote className="h-12 w-12 mx-auto mb-4 opacity-20" />
-            <p>No se encontraron notas.</p>
+        {filteredNotes.map((note) => (
+          <Card key={note.id} className="hover:shadow-lg transition-shadow duration-300">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-lg font-semibold line-clamp-1">{note.title}</CardTitle>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditNote(note)}>
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={() => handleDeleteNote(note.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">{note.date}</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground line-clamp-3">{note.content}</p>
+            </CardContent>
+            <CardFooter className="pt-2 flex flex-wrap gap-2">
+              {note.tags.map((tag) => (
+                <span key={tag} className="text-xs bg-secondary px-2 py-1 rounded-full">
+                  {tag}
+                </span>
+              ))}
+            </CardFooter>
+          </Card>
+        ))}
+        {filteredNotes.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground opacity-50">
+            <StickyNote className="h-16 w-16 mb-4" />
+            <p>No se encontraron notas</p>
           </div>
-        ) : (
-          filteredNotes.map((note) => (
-            <Card key={note.id} className="group relative hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <CardTitle className="line-clamp-1 text-lg">{note.title}</CardTitle>
-                <div className="text-xs text-muted-foreground">{note.date}</div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-4 whitespace-pre-line">
-                  {note.content}
-                </p>
-              </CardContent>
-              <CardFooter className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" onClick={() => openEditNote(note)}>
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeleteNote(note.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
-            </Card>
-          ))
         )}
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>{isEditing ? "Editar Nota" : "Nueva Nota"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Input
-                placeholder="Título de la nota"
+                placeholder="Título"
                 value={currentNote.title || ""}
                 onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Textarea
-                placeholder="Escribe aquí tu reflexión..."
+                placeholder="Escribe tu reflexión aquí..."
                 className="min-h-[200px]"
                 value={currentNote.content || ""}
                 onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
@@ -182,9 +234,12 @@ export function UserNotes() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveNote}>
-              <Save className="mr-2 h-4 w-4" /> Guardar
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveNote} className="gradient-primary">
+              <Save className="mr-2 h-4 w-4" />
+              Guardar
             </Button>
           </DialogFooter>
         </DialogContent>

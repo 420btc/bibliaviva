@@ -2,6 +2,8 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import { loginOrRegisterAction, syncUserAction } from "@/actions/auth"
+import { toast } from "sonner"
 
 interface User {
   id: string
@@ -12,51 +14,68 @@ interface User {
 
 interface AuthContextType {
   user: User | null
-  login: (name: string, email: string) => void
+  login: (name: string, email: string) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: () => {},
+  login: async () => {},
   logout: () => {},
   isAuthenticated: false,
+  isLoading: true,
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("biblia-viva-user")
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser))
-        setIsAuthenticated(true)
-      } catch (e) {
-        console.error("Error parsing user data", e)
-        localStorage.removeItem("biblia-viva-user")
+    const initAuth = async () => {
+      const savedUser = localStorage.getItem("biblia-viva-user")
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser)
+          setUser(parsedUser)
+          setIsAuthenticated(true)
+          
+          // Sync with DB in background to ensure user exists
+          syncUserAction(parsedUser).catch(err => 
+            console.error("Failed to sync user with DB", err)
+          )
+        } catch (e) {
+          console.error("Error parsing user data", e)
+          localStorage.removeItem("biblia-viva-user")
+        }
       }
+      setIsLoading(false)
     }
+    initAuth()
   }, [])
 
-  const login = (name: string, email: string) => {
-    const newUser = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      createdAt: new Date().toISOString()
-    }
-    setUser(newUser)
-    setIsAuthenticated(true)
+  const login = async (name: string, email: string) => {
+    setIsLoading(true)
     try {
-      localStorage.setItem("biblia-viva-user", JSON.stringify(newUser))
+        const result = await loginOrRegisterAction(name, email)
+        if (result.success && result.user) {
+            setUser(result.user)
+            setIsAuthenticated(true)
+            localStorage.setItem("biblia-viva-user", JSON.stringify(result.user))
+            router.push("/")
+            toast.success(`Bienvenido, ${result.user.name}`)
+        } else {
+            toast.error(result.error || "Error al iniciar sesión")
+        }
     } catch (e) {
-      console.error("Error saving user to localStorage", e)
+        console.error("Login error", e)
+        toast.error("Error de conexión")
+    } finally {
+        setIsLoading(false)
     }
-    router.push("/")
   }
 
   const logout = () => {
@@ -67,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isLoading }}>
       {children}
     </AuthContext.Provider>
   )

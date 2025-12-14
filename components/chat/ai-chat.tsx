@@ -11,13 +11,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { chatWithBibleAI } from "@/lib/openai-actions"
 import { toast } from "sonner"
 import { useSearchParams } from "next/navigation"
-
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  timestamp: Date
-}
+import { useAuth } from "@/components/auth-provider"
+import { saveChatMessageAction, getChatHistoryAction, type Message } from "@/actions/chat"
 
 const suggestedQuestions = [
   { icon: BookOpen, text: "¿Qué significa nacer de nuevo?" },
@@ -37,11 +32,40 @@ const initialMessages: Message[] = [
 ]
 
 export function AIChat() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const searchParams = useSearchParams()
   const hasInitialized = useRef(false)
+  const { user } = useAuth()
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Cargar historial
+  useEffect(() => {
+    const loadHistory = async () => {
+        if (user?.id) {
+            try {
+                const res = await getChatHistoryAction(user.id)
+                if (res.success && res.data && res.data.length > 0) {
+                    setMessages(res.data)
+                } else {
+                    setMessages(initialMessages)
+                }
+            } catch (e) {
+                console.error(e)
+                setMessages(initialMessages)
+            }
+        } else {
+            setMessages(initialMessages)
+        }
+    }
+    loadHistory()
+  }, [user])
+
+  // Scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   // Efecto para detectar si venimos del Versículo del Día
   useEffect(() => {
@@ -62,18 +86,24 @@ export function AIChat() {
       // Añadirlo inmediatamente y pedir respuesta
       setMessages(prev => [...prev, specialMessage])
       
+      if (user?.id) {
+          saveChatMessageAction(user.id, specialMessage)
+      }
+      
       // Trigger AI response automatically
       setTimeout(() => {
         handleAutoResponse(specialMessage.content)
       }, 500)
     }
-  }, [searchParams])
+  }, [searchParams, user])
 
   const handleAutoResponse = async (text: string) => {
     setIsTyping(true)
     try {
+      // Use messages from state + new user message for context
+      // Note: we might want to limit context window size
       const apiMessages = [
-        ...initialMessages, 
+        ...messages, 
         { role: "user" as const, content: text }
       ].map(msg => ({ role: msg.role, content: msg.content }))
 
@@ -86,6 +116,10 @@ export function AIChat() {
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, aiResponse])
+      
+      if (user?.id) {
+          saveChatMessageAction(user.id, aiResponse)
+      }
     } catch (error) {
       console.error(error)
       toast.error("Error al obtener respuesta automática")
@@ -104,17 +138,19 @@ export function AIChat() {
       timestamp: new Date(),
     }
 
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
+    setMessages((prev) => [...prev, userMessage])
     setInput("")
-    setIsTyping(true)
+    
+    if (user?.id) {
+        saveChatMessageAction(user.id, userMessage)
+    }
 
+    setIsTyping(true)
     try {
-      // Convertir mensajes al formato de OpenAI
-      const apiMessages = newMessages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      const apiMessages = [
+          ...messages, 
+          userMessage
+      ].map(msg => ({ role: msg.role, content: msg.content }))
 
       const response = await chatWithBibleAI(apiMessages)
 
@@ -125,144 +161,86 @@ export function AIChat() {
         timestamp: new Date(),
       }
       setMessages((prev) => [...prev, aiResponse])
+      
+      if (user?.id) {
+          saveChatMessageAction(user.id, aiResponse)
+      }
     } catch (error) {
       console.error(error)
-      toast.error("Hubo un error al conectar con el asistente.")
+      toast.error("Error al obtener respuesta")
     } finally {
       setIsTyping(false)
     }
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Encabezado */}
-      <div className="border-b border-border p-4">
-        <div className="flex items-center gap-3 max-w-3xl mx-auto">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full gradient-primary">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-semibold text-foreground">Asistente Bíblico IA</h1>
-            <p className="text-sm text-muted-foreground">Tu guía de estudio personal</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Mensajes */}
-      <ScrollArea className="flex-1">
-        <div className="max-w-3xl mx-auto p-4 space-y-6">
-          <AnimatePresence>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
-              >
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarFallback
-                    className={
-                      message.role === "assistant" ? "gradient-primary text-primary-foreground" : "bg-secondary"
-                    }
-                  >
-                    {message.role === "assistant" ? <Sparkles className="w-4 h-4" /> : "Tú"}
-                  </AvatarFallback>
-                </Avatar>
-                <Card
-                  className={`p-4 max-w-[80%] ${
-                    message.role === "user" ? "bg-primary text-primary-foreground" : "glass-card"
-                  }`}
-                >
-                  <div className="prose prose-sm prose-invert max-w-none">
-                    {message.content.split("\n").map((line, i) => (
-                      <p
-                        key={i}
-                        className={`${i > 0 ? "mt-2" : ""} ${message.role === "user" ? "text-primary-foreground" : "text-foreground"}`}
-                      >
-                        {line.startsWith(">") ? (
-                          <blockquote className={`border-l-2 pl-3 italic ${message.role === 'user' ? 'border-primary-foreground/30 text-primary-foreground/90' : 'border-primary text-muted-foreground'}`}>
-                            {line.slice(1).trim()}
-                          </blockquote>
-                        ) : line.startsWith("**") ? (
-                          <strong>{line.replace(/\*\*/g, "")}</strong>
-                        ) : (
-                          line
-                        )}
-                      </p>
-                    ))}
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Indicador de escritura */}
-          {isTyping && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback className="gradient-primary text-primary-foreground">
-                  <Sparkles className="w-4 h-4" />
-                </AvatarFallback>
+    <div className="flex flex-col h-[600px] glass-card rounded-2xl border border-primary/20 overflow-hidden">
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {messages.map((message) => (
+            <motion.div
+              key={message.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex items-start gap-3 ${message.role === "assistant" ? "" : "flex-row-reverse"}`}
+            >
+              <Avatar className={message.role === "assistant" ? "bg-primary/20" : "bg-secondary"}>
+                <AvatarFallback>{message.role === "assistant" ? "AI" : "Tú"}</AvatarFallback>
               </Avatar>
-              <Card className="glass-card p-4">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span
-                    className="w-2 h-2 rounded-full bg-primary animate-bounce"
-                    style={{ animationDelay: "150ms" }}
-                  />
-                  <span
-                    className="w-2 h-2 rounded-full bg-primary animate-bounce"
-                    style={{ animationDelay: "300ms" }}
-                  />
-                </div>
+              <Card
+                className={`p-3 max-w-[80%] ${
+                  message.role === "assistant"
+                    ? "bg-background/80 border-primary/20"
+                    : "bg-primary text-primary-foreground"
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </Card>
             </motion.div>
-          )}
-
-          {/* Sugerencias (solo si no hay mensajes del usuario) */}
-          {messages.length === 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6"
-            >
-              {suggestedQuestions.map((q, i) => (
-                <Button
-                  key={i}
-                  variant="outline"
-                  className="h-auto p-4 justify-start gap-3 text-left bg-transparent"
-                  onClick={() => sendMessage(q.text)}
-                >
-                  <q.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                  <span className="text-sm">{q.text}</span>
-                </Button>
-              ))}
+          ))}
+          {isTyping && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-sm text-muted-foreground p-2">
+              <Sparkles className="w-4 h-4 animate-spin" />
+              Escribiendo...
             </motion.div>
           )}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
-      {/* Input */}
-      <div className="border-t border-border p-4">
-        <div className="max-w-3xl mx-auto flex gap-3">
+      <div className="p-4 bg-background/50 border-t border-border/50">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+          {suggestedQuestions.map((q, i) => (
+            <Button
+              key={i}
+              variant="outline"
+              size="sm"
+              className="whitespace-nowrap flex gap-2"
+              onClick={() => sendMessage(q.text)}
+            >
+              <q.icon className="w-3 h-3" />
+              {q.text}
+            </Button>
+          ))}
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            sendMessage(input)
+          }}
+          className="flex gap-2"
+        >
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            placeholder="Escribe tu pregunta..."
-            className="flex-1 bg-secondary border-0"
+            placeholder="Haz una pregunta sobre la Biblia..."
+            className="flex-1"
+            disabled={isTyping}
           />
-          <Button
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || isTyping}
-            className="gradient-primary border-0"
-          >
-            <Send className="w-5 h-5" />
+          <Button type="submit" size="icon" disabled={isTyping || !input.trim()} className="gradient-primary">
+            <Send className="w-4 h-4" />
           </Button>
-        </div>
+        </form>
       </div>
     </div>
   )

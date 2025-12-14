@@ -35,6 +35,9 @@ import { useSettings } from "@/components/settings-provider"
 import { useSearchParams, useRouter } from "next/navigation"
 import { generateVerseAudio } from "@/lib/openai-actions"
 import { toast } from "sonner"
+import { useAuth } from "@/components/auth-provider"
+import { saveBookmarkAction } from "@/actions/bookmarks"
+import { saveProgressAction, getProgressAction } from "@/actions/progress"
 import {
   Select,
   SelectContent,
@@ -62,69 +65,97 @@ const fetcher = async ([bookId, chapter]: [string, number]): Promise<ChapterResp
 }
 
 export function BibleReader() {
+  const { user } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [selectedBook, setSelectedBook] = useState<BibleBookLocal>(bibleBooks.antiguoTestamento[0]) // Génesis por defecto
   const [selectedChapter, setSelectedChapter] = useState(1)
   const [selectedVerses, setSelectedVerses] = useState<number[]>([])
   
-  // Efecto para cargar libro/capítulo desde URL
+  // Efecto para cargar libro/capítulo desde URL o DB/LocalStorage
   useEffect(() => {
-    const libroParam = searchParams.get("libro")
-    const capituloParam = searchParams.get("capitulo")
-    const versiculoParam = searchParams.get("versiculo")
+    const loadInitialState = async () => {
+      const libroParam = searchParams.get("libro")
+      const capituloParam = searchParams.get("capitulo")
+      const versiculoParam = searchParams.get("versiculo")
 
-    // Resetear audio al cambiar de capítulo/libro
-    stopAudio()
+      // Resetear audio al cambiar de capítulo/libro
+      stopAudio()
 
-    if (libroParam) {
-      const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
-      const foundBook = allBooks.find(b => b.nombre.toLowerCase() === libroParam.toLowerCase())
-      
-      if (foundBook) {
-        setSelectedBook(foundBook)
-        if (capituloParam) {
-          const capNum = parseInt(capituloParam)
-          if (!isNaN(capNum) && capNum > 0 && capNum <= foundBook.capitulos) {
-            setSelectedChapter(capNum)
+      if (libroParam) {
+        const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
+        const foundBook = allBooks.find(b => b.nombre.toLowerCase() === libroParam.toLowerCase())
+        
+        if (foundBook) {
+          setSelectedBook(foundBook)
+          if (capituloParam) {
+            const capNum = parseInt(capituloParam)
+            if (!isNaN(capNum) && capNum > 0 && capNum <= foundBook.capitulos) {
+              setSelectedChapter(capNum)
+            }
+          }
+          if (versiculoParam) {
+            const versNum = parseInt(versiculoParam)
+            if (!isNaN(versNum)) {
+              setSelectedVerses([versNum])
+              // Intentar hacer scroll al versículo después de un breve delay para asegurar que cargó
+              setTimeout(() => {
+                const element = document.getElementById(`verse-${versNum}`)
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+              }, 1000)
+            }
           }
         }
-        if (versiculoParam) {
-          const versNum = parseInt(versiculoParam)
-          if (!isNaN(versNum)) {
-            setSelectedVerses([versNum])
-            // Intentar hacer scroll al versículo después de un breve delay para asegurar que cargó
-            setTimeout(() => {
-              const element = document.getElementById(`verse-${versNum}`)
-              if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else {
+        // Cargar última posición desde DB si hay usuario, sino LocalStorage
+        if (user?.id) {
+          try {
+            const { success, data } = await getProgressAction(user.id)
+            if (success && data) {
+              const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
+              const book = allBooks.find(b => b.id === data.bookId)
+              if (book) {
+                setSelectedBook(book)
+                setSelectedChapter(data.chapter)
+                return // Priorizar DB sobre LocalStorage
               }
-            }, 1000)
+            }
+          } catch (e) {
+            console.error("Error loading progress from DB", e)
           }
         }
-      }
-    } else {
-      // Cargar última posición guardada si no hay params en URL
-      const savedPosition = localStorage.getItem("biblia-viva-last-position")
-      if (savedPosition) {
-        try {
-          const { bookId, chapter } = JSON.parse(savedPosition)
-          const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
-          const book = allBooks.find(b => b.id === bookId)
-          if (book) {
-            setSelectedBook(book)
-            setSelectedChapter(chapter)
+
+        // Fallback a LocalStorage
+        const savedPosition = localStorage.getItem("biblia-viva-last-position")
+        if (savedPosition) {
+          try {
+            const { bookId, chapter } = JSON.parse(savedPosition)
+            const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
+            const book = allBooks.find(b => b.id === bookId)
+            if (book) {
+              setSelectedBook(book)
+              setSelectedChapter(chapter)
+            }
+          } catch (e) {
+            console.error("Error loading saved position", e)
           }
-        } catch (e) {
-          console.error("Error loading saved position", e)
         }
       }
     }
-  }, [searchParams])
+    loadInitialState()
+  }, [searchParams, user])
 
   // Guardar posición al cambiar
   useEffect(() => {
     if (selectedBook && selectedChapter) {
+      // Guardar en DB si hay usuario
+      if (user?.id) {
+        saveProgressAction(user.id, selectedBook.id, selectedChapter).catch(console.error)
+      }
+
+      // Guardar en LocalStorage (siempre, como backup/offline)
       try {
         localStorage.setItem("biblia-viva-last-position", JSON.stringify({
           bookId: selectedBook.id,
@@ -149,7 +180,7 @@ export function BibleReader() {
         }
       }
     }
-  }, [selectedBook, selectedChapter])
+  }, [selectedBook, selectedChapter, user])
 
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
   const [showBookSelector, setShowBookSelector] = useState(false)
@@ -235,21 +266,41 @@ export function BibleReader() {
   }
 
   // Función para guardar Bookmark
-  const saveBookmark = () => {
+  const saveBookmark = async () => {
     if (selectedVerses.length === 0) return
 
     const versesToSave = selectedVerses.sort((a, b) => a - b).map(v => {
       const verseText = chapterData?.vers.find(verse => parseInt(verse.number) === v)?.verse
       return {
         id: `${selectedBook.id}-${selectedChapter}-${v}-${Date.now()}`,
-        bookId: selectedBook.id,
+        user_id: user?.id || "local-user", // Fallback for types
+        book_id: selectedBook.id, // Use snake_case for DB compatibility in local object if needed, or map it
+        bookId: selectedBook.id, // Keep camelCase for local logic
         bookName: selectedBook.nombre,
+        book_name: selectedBook.nombre,
         chapter: selectedChapter,
         verse: v,
         text: verseText || "",
+        created_at: new Date().toISOString(),
         date: new Date().toISOString()
       }
     })
+
+    // Guardar en DB si hay usuario
+    if (user?.id) {
+      for (const verse of versesToSave) {
+        await saveBookmarkAction({
+          id: verse.id,
+          user_id: user.id,
+          book_id: verse.book_id,
+          book_name: verse.book_name,
+          chapter: verse.chapter,
+          verse: verse.verse,
+          text: verse.text,
+          created_at: verse.created_at
+        })
+      }
+    }
 
     try {
       const existingBookmarks = JSON.parse(localStorage.getItem("biblia-viva-bookmarks") || "[]")
