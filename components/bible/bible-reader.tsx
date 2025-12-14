@@ -24,6 +24,7 @@ import {
   ScrollText,
   Loader2,
   Settings2,
+  Trash2,
   X
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -168,14 +169,18 @@ export function BibleReader() {
   }
 
   // Manejar resaltado
-  const handleHighlight = (colorClass: string) => {
+  const handleHighlight = (colorClass: string | null) => {
     const newHighlights = { ...highlights }
     const key = `${selectedBook.id}-${selectedChapter}`
     
     if (!newHighlights[key]) newHighlights[key] = {}
     
     selectedVerses.forEach(verse => {
-      newHighlights[key][verse] = colorClass
+      if (colorClass === null) {
+        delete newHighlights[key][verse]
+      } else {
+        newHighlights[key][verse] = colorClass
+      }
     })
     
     setHighlights(newHighlights)
@@ -598,6 +603,18 @@ export function BibleReader() {
                     title={`Resaltar ${color.name}`}
                   />
                 ))}
+                
+                {/* Botón para quitar resaltado */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleHighlight(null)}
+                  className="w-8 h-8 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors ml-1"
+                  title="Quitar resaltado"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+
                 <div className="w-px h-6 bg-border mx-2" />
                 <Button variant="ghost" size="icon" title="Copiar">
                   <Share2 className="w-4 h-4" />
