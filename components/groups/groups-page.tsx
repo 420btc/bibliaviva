@@ -75,12 +75,51 @@ export function GroupsPage() {
   const [chatMessage, setChatMessage] = useState("")
 
   const grupo = grupos.find((g) => g.id === selectedGroup)
+  
+  // Mensajes de chat más dinámicos y realistas
+  const renderMessageBubble = (msg: typeof mensajesGrupo[0]) => {
+    const isMe = msg.usuario === "Tú" // Placeholder para usuario actual si lo hubiera
+    return (
+      <motion.div
+        key={msg.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}
+      >
+        <Avatar className="w-8 h-8 mt-1">
+          <AvatarFallback className={`text-xs ${isMe ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+             {msg.avatar}
+          </AvatarFallback>
+        </Avatar>
+        <div className={`flex flex-col max-w-[80%] ${isMe ? 'items-end' : 'items-start'}`}>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="font-medium text-foreground text-xs">{msg.usuario}</span>
+            <span className="text-[10px] text-muted-foreground">{msg.hora}</span>
+          </div>
+          <div className={`
+            p-3 rounded-2xl text-sm shadow-sm
+            ${isMe 
+              ? 'bg-primary text-primary-foreground rounded-tr-none' 
+              : 'bg-card border border-border rounded-tl-none'
+            }
+          `}>
+            {msg.mensaje}
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
 
   return (
-    <div className="h-full flex">
+    <div className="h-full w-full flex overflow-hidden bg-background">
       {/* Lista de grupos */}
-      <div className={`${selectedGroup ? "hidden lg:flex" : "flex"} flex-col w-full lg:w-80 border-r border-border`}>
-        <div className="p-4 border-b border-border">
+      <div 
+        className={`
+          ${selectedGroup ? "hidden lg:flex" : "flex"} 
+          flex-col w-full lg:w-96 border-r border-border h-full bg-card
+        `}
+      >
+        <div className="p-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold text-foreground">Grupos de Estudio</h1>
             <Button size="icon" className="gradient-primary border-0">
@@ -94,31 +133,32 @@ export function GroupsPage() {
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-4 space-y-3">
+          <div className="p-4 px-6 space-y-4">
             {grupos.map((group, index) => (
               <motion.div
                 key={group.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
+                className="px-1 py-1"
               >
                 <Card
-                  className={`glass-card p-4 cursor-pointer transition-all hover:border-primary/50 ${
-                    selectedGroup === group.id && "border-primary"
+                  className={`glass-card p-4 cursor-pointer transition-all hover:border-primary/50 hover:shadow-md ${
+                    selectedGroup === group.id ? "border-primary ring-1 ring-primary/20" : ""
                   }`}
                   onClick={() => setSelectedGroup(group.id)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center shrink-0">
                       <Users className="w-6 h-6 text-primary-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground truncate">{group.nombre}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-foreground leading-tight">{group.nombre}</h3>
                         {group.activo && <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />}
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">{group.descripcion}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground line-clamp-2 leading-snug mb-2">{group.descripcion}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
                           {group.miembros}
@@ -150,9 +190,9 @@ export function GroupsPage() {
 
       {/* Chat del grupo */}
       {selectedGroup && grupo ? (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
           {/* Header del chat */}
-          <div className="p-4 border-b border-border flex items-center justify-between">
+          <div className="p-4 border-b border-border flex items-center justify-between shrink-0 bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSelectedGroup(null)}>
                 ←
@@ -174,55 +214,44 @@ export function GroupsPage() {
           </div>
 
           {/* Mensajes */}
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
+          <ScrollArea className="flex-1 p-4 bg-secondary/5">
+            <div className="space-y-6 max-w-4xl mx-auto">
               {/* Info de lectura actual */}
-              <div className="bg-secondary/50 rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">Lectura actual del grupo</p>
-                <p className="font-semibold text-foreground">{grupo.lecturaActual}</p>
-                <Button variant="link" size="sm" className="text-primary">
-                  Abrir en lector
-                </Button>
+              <div className="flex justify-center my-6">
+                 <div className="bg-accent/10 border border-accent/20 rounded-full px-4 py-1 flex items-center gap-2">
+                    <BookOpen className="w-3 h-3 text-accent" />
+                    <span className="text-xs text-muted-foreground">Lectura actual: <span className="font-semibold text-foreground">{grupo.lecturaActual}</span></span>
+                 </div>
               </div>
 
               {/* Mensajes */}
-              {mensajesGrupo.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex gap-3"
-                >
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-secondary text-sm">{msg.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-medium text-foreground text-sm">{msg.usuario}</span>
-                      <span className="text-xs text-muted-foreground">{msg.hora}</span>
-                    </div>
-                    <p className="text-foreground/90 text-sm mt-1">{msg.mensaje}</p>
-                  </div>
-                </motion.div>
-              ))}
+              {mensajesGrupo.map(renderMessageBubble)}
 
               {/* Nota compartida */}
-              <Card className="glass-card p-4 ml-11">
-                <div className="flex items-center gap-2 mb-2">
-                  <Crown className="w-4 h-4 text-accent" />
-                  <span className="text-xs text-muted-foreground">Nota destacada del líder</span>
-                </div>
-                <p className="text-sm text-foreground italic">
-                  &ldquo;Romanos 8:28 nos recuerda que Dios trabaja en todas las cosas para el bien de quienes le
-                  aman.&rdquo;
-                </p>
-              </Card>
+              <motion.div 
+                 initial={{ opacity: 0, scale: 0.95 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 className="flex justify-center"
+              >
+                <Card className="glass-card p-4 max-w-md w-full bg-yellow-500/5 border-yellow-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1 rounded bg-yellow-500/10">
+                       <Crown className="w-4 h-4 text-yellow-500" />
+                    </div>
+                    <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">Nota destacada del líder</span>
+                  </div>
+                  <p className="text-sm text-foreground italic relative pl-4 border-l-2 border-yellow-500/30">
+                    &ldquo;Romanos 8:28 nos recuerda que Dios trabaja en todas las cosas para el bien de quienes le
+                    aman.&rdquo;
+                  </p>
+                </Card>
+              </motion.div>
             </div>
           </ScrollArea>
 
           {/* Input de mensaje */}
-          <div className="p-4 border-t border-border">
-            <div className="flex gap-3">
+          <div className="p-4 border-t border-border shrink-0 bg-card/50 backdrop-blur-sm">
+            <div className="flex gap-3 max-w-4xl mx-auto w-full">
               <Input
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
@@ -236,11 +265,19 @@ export function GroupsPage() {
           </div>
         </div>
       ) : (
-        <div className="hidden lg:flex flex-1 items-center justify-center bg-secondary/20">
-          <div className="text-center">
-            <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">Selecciona un grupo</h3>
-            <p className="text-muted-foreground">Elige un grupo de la lista para ver el chat</p>
+        <div className="hidden lg:flex flex-1 items-center justify-center bg-secondary/5 h-full p-6">
+          <div className="text-center p-8 max-w-md w-full bg-card/50 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-primary/5">
+               <MessageCircle className="w-10 h-10 text-primary" />
+            </div>
+            <h3 className="text-2xl font-bold text-foreground mb-3">Comunidad Bíblica</h3>
+            <p className="text-muted-foreground text-lg mb-6">
+              Selecciona un grupo para comenzar a estudiar y compartir con otros hermanos en la fe.
+            </p>
+            <Button className="gradient-primary border-0" onClick={() => setSelectedGroup(grupos[0].id)}>
+              <Users className="w-4 h-4 mr-2" />
+              Ver primer grupo
+            </Button>
           </div>
         </div>
       )}

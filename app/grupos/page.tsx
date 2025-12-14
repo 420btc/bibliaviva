@@ -4,7 +4,9 @@ import { GroupsPage } from "@/components/groups/groups-page"
 export default function GruposPage() {
   return (
     <AppShell>
-      <GroupsPage />
+      <div className="h-full w-full">
+        <GroupsPage />
+      </div>
     </AppShell>
   )
 }
