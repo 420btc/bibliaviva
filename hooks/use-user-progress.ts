@@ -17,9 +17,14 @@ export function useUserProgress() {
         const parsed = JSON.parse(saved)
         let loadedProgress = { ...defaultUserProgress, ...parsed }
         
-        // Detección de datos "fake" antiguos (Nivel 3 con 450 XP exactos y 8 quizzes)
-        // Si el usuario tiene estos datos exactos, asumimos que son los datos de prueba y los reseteamos
-        if (loadedProgress.nivel === 3 && loadedProgress.xp === 450 && loadedProgress.quizzesCompletados === 8) {
+        // Detección de datos "fake" antiguos
+        // Verificamos patrones específicos de los datos de prueba anteriores
+        const isFakeData = 
+          (loadedProgress.nivel === 3 && loadedProgress.xp === 450) ||
+          (loadedProgress.versiculosLeidos === 247) ||
+          (loadedProgress.quizzesCompletados === 8 && loadedProgress.nivel === 3);
+
+        if (isFakeData) {
            console.log("Detectados datos de prueba antiguos. Reseteando a progreso inicial.")
            loadedProgress = { ...defaultUserProgress }
         }
@@ -45,32 +50,36 @@ export function useUserProgress() {
   // Guardar progreso cuando cambia
   useEffect(() => {
     if (isLoaded) {
+      // Sanitize progress to ensure only expected fields are saved
+      // and avoid saving potentially large accidental objects
+      const cleanProgress: UserProgress = {
+        nivel: progress.nivel,
+        xp: progress.xp,
+        xpParaSiguienteNivel: progress.xpParaSiguienteNivel,
+        racha: progress.racha,
+        mejorRacha: progress.mejorRacha,
+        versiculosLeidos: progress.versiculosLeidos,
+        capituslosCompletados: progress.capituslosCompletados,
+        librosCompletados: progress.librosCompletados,
+        quizzesCompletados: progress.quizzesCompletados,
+        insignias: progress.insignias || [],
+        titulo: progress.titulo,
+        desafiosDiariosCompletados: progress.desafiosDiariosCompletados || [],
+        fechaUltimoDesafio: progress.fechaUltimoDesafio || new Date().toISOString().split('T')[0]
+      }
+
       try {
-        // Sanitize progress to ensure only expected fields are saved
-        // and avoid saving potentially large accidental objects
-        const cleanProgress: UserProgress = {
-          nivel: progress.nivel,
-          xp: progress.xp,
-          xpParaSiguienteNivel: progress.xpParaSiguienteNivel,
-          racha: progress.racha,
-          mejorRacha: progress.mejorRacha,
-          versiculosLeidos: progress.versiculosLeidos,
-          capituslosCompletados: progress.capituslosCompletados,
-          librosCompletados: progress.librosCompletados,
-          quizzesCompletados: progress.quizzesCompletados,
-          insignias: progress.insignias || [],
-          titulo: progress.titulo,
-          desafiosDiariosCompletados: progress.desafiosDiariosCompletados || [],
-          fechaUltimoDesafio: progress.fechaUltimoDesafio || new Date().toISOString().split('T')[0]
-        }
-        
         const serialized = JSON.stringify(cleanProgress)
         localStorage.setItem(STORAGE_KEY, serialized)
       } catch (e) {
-        console.error("Error saving progress to localStorage:", e)
-        // If quota exceeded, we might want to try to clear some space or notify user
-        if (e instanceof DOMException && e.name === "QuotaExceededError") {
-             console.warn("LocalStorage quota exceeded. Progress might not be saved.")
+        console.warn("Failed to save progress to localStorage:", e)
+        
+        // Attempt recovery by clearing the specific key first
+        try {
+          localStorage.removeItem(STORAGE_KEY)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanProgress))
+        } catch (retryError) {
+           console.warn("Retry failed. LocalStorage might be full.")
         }
       }
     }
