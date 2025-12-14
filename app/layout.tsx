@@ -3,6 +3,9 @@ import type { Metadata, Viewport } from "next"
 import { Inter, Merriweather } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
+import { AuthProvider } from "@/components/auth-provider"
+import { ThemeProvider } from "@/components/theme-provider"
+import { SettingsProvider } from "@/components/settings-provider"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -34,11 +37,22 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        {children}
-        <Analytics />
-        <Toaster />
+        <AuthProvider>
+          <SettingsProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Analytics />
+              <Toaster />
+            </ThemeProvider>
+          </SettingsProvider>
+        </AuthProvider>
       </body>
     </html>
   )

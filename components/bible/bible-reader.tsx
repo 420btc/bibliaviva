@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUserProgress } from "@/hooks/use-user-progress"
+import { useSettings } from "@/components/settings-provider"
 
 const highlightColors = [
   { name: "Amarillo", class: "bg-yellow-500/30", color: "#eab308" },
@@ -45,6 +46,7 @@ export function BibleReader() {
   const [searchQuery, setSearchQuery] = useState("")
   
   const { addXP, completeChallenge } = useUserProgress()
+  const { fontSize } = useSettings()
 
   const filteredBooks = useMemo(() => {
     if (!searchQuery) {
@@ -300,7 +302,10 @@ export function BibleReader() {
                   <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
                     {verse.number}
                   </span>
-                  <p className="text-lg leading-relaxed font-serif text-foreground">
+                  <p 
+                    className="leading-relaxed font-serif text-foreground"
+                    style={{ fontSize: `${fontSize}px` }}
+                  >
                     {verse.verse}
                   </p>
                 </div>
