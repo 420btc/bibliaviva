@@ -84,8 +84,8 @@ export function UserNotes() {
     try {
       localStorage.setItem("biblia-viva-notes", JSON.stringify(notes))
     } catch (error) {
-      console.warn("Storage quota exceeded, cannot save notes", error)
-      toast.error("No hay espacio suficiente para guardar las notas localmente")
+       // Ignorar error de quota, la DB es la fuente principal
+       console.warn("Storage quota exceeded, cannot save notes to localStorage")
     }
   }, [notes, isLoaded])
 

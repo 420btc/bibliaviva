@@ -93,7 +93,8 @@ export function useUserProgress() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanProgress))
       } catch (e) {
-        console.warn("Failed to save progress to localStorage:", e)
+        // Ignorar quota exceeded
+        console.warn("Failed to save progress to localStorage (QuotaExceeded)")
       }
 
       // 2. Guardar en DB si hay usuario

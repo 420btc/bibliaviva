@@ -63,7 +63,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const updateFontSize = (size: number) => {
     setFontSize(size)
-    localStorage.setItem("biblia-viva-font-size", size.toString())
+    try {
+      localStorage.setItem("biblia-viva-font-size", size.toString())
+    } catch(e) { /* ignore */ }
     if (user?.id) {
         saveUserSettingsAction(user.id, { fontSize: size })
     }
@@ -71,7 +73,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const updateLanguage = (lang: string) => {
     setLanguage(lang)
-    localStorage.setItem("biblia-viva-language", lang)
+    try {
+      localStorage.setItem("biblia-viva-language", lang)
+    } catch(e) { /* ignore */ }
     if (user?.id) {
         saveUserSettingsAction(user.id, { language: lang })
     }
