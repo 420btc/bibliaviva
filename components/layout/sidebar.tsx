@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -41,8 +42,14 @@ export function Sidebar() {
     <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card/30 backdrop-blur-md h-screen sticky top-0">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg shadow-primary/20">
-            <Sparkles className="w-6 h-6 text-primary-foreground" />
+          <div className="relative w-12 h-12">
+            <Image 
+              src="/biblia.png" 
+              alt="Logo Biblia Viva" 
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
           <div>
             <h1 className="font-bold text-xl text-foreground tracking-tight">Biblia Viva</h1>
