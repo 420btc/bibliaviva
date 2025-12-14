@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Sparkles, BookOpen, MessageCircle, Users, Trophy, ShieldCheck } from "lucide-react"
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { ShaderBackground } from "@/components/ui/digital-aurora"
 
 export default function LoginPage() {
   const [name, setName] = useState("")
@@ -31,9 +32,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 relative overflow-hidden">
       {/* Fondo decorativo */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent rounded-full blur-[100px]" />
+      <div className="absolute inset-0 z-0">
+          <ShaderBackground />
       </div>
 
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center z-10">
