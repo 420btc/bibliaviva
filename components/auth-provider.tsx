@@ -82,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setIsAuthenticated(false)
     localStorage.removeItem("biblia-viva-user")
+    // Opcional: Limpiar otros datos locales si es deseado para seguridad completa en dispositivos compartidos
+    // localStorage.clear() 
     router.push("/login")
   }
 
