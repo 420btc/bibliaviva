@@ -51,14 +51,14 @@ export default function LoginPage() {
                 />
             </div>
             <h1 className="text-3xl font-bold text-foreground tracking-tight drop-shadow-xl">Biblia Viva</h1>
-            <p className="text-muted-foreground text-center mt-2 drop-shadow-md">
+            <p className="text-white text-center mt-2 drop-shadow-md">
               Tu compañero espiritual inteligente
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-foreground ml-1 drop-shadow-sm">
+              <label htmlFor="name" className="text-sm font-medium text-white ml-1 drop-shadow-sm">
                 Nombre de Usuario
               </label>
               <Input
@@ -72,7 +72,7 @@ export default function LoginPage() {
             </div>
             
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground ml-1 drop-shadow-sm">
+              <label htmlFor="email" className="text-sm font-medium text-white ml-1 drop-shadow-sm">
                 Correo Electrónico
               </label>
               <Input
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 required
                 className="bg-secondary/50 border-border/50 focus:border-primary h-11 shadow-lg"
               />
-              <p className="text-xs text-muted-foreground ml-1 drop-shadow-sm">
+              <p className="text-xs text-white/80 ml-1 drop-shadow-sm">
                 Usado para guardar y recuperar tu progreso en la nube.
               </p>
             </div>
@@ -118,10 +118,10 @@ export default function LoginPage() {
         {/* Columna Derecha: Información */}
         <div className="hidden md:flex flex-col space-y-6 text-foreground p-4">
             <div>
-                <h2 className="text-4xl font-bold mb-4 text-blue-600 drop-shadow-lg">
+                <h2 className="text-4xl font-bold mb-4 text-white drop-shadow-lg">
                     Explora la Palabra como nunca antes.
                 </h2>
-                <p className="text-lg text-muted-foreground leading-relaxed drop-shadow-md">
+                <p className="text-lg text-white leading-relaxed drop-shadow-md">
                     Biblia Viva combina la sabiduría eterna de las Escrituras con tecnología moderna para enriquecer tu vida espiritual diaria.
                 </p>
             </div>
@@ -132,7 +132,7 @@ export default function LoginPage() {
                         <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shadow-inner">
                             <feature.icon className="w-5 h-5 drop-shadow-sm" />
                         </div>
-                        <span className="font-medium drop-shadow-sm">{feature.text}</span>
+                        <span className="font-medium drop-shadow-sm text-white">{feature.text}</span>
                     </div>
                 ))}
             </div>
@@ -141,12 +141,12 @@ export default function LoginPage() {
       
       {/* Mobile Features (visible only on small screens below form) */}
       <div className="md:hidden mt-8 w-full max-w-md space-y-4">
-          <p className="text-center text-sm text-muted-foreground mb-4">Descubre todas las funcionalidades:</p>
+          <p className="text-center text-sm text-white mb-4 drop-shadow-md">Descubre todas las funcionalidades:</p>
           <div className="grid grid-cols-2 gap-3">
             {features.map((feature, idx) => (
                 <div key={idx} className="flex flex-col items-center gap-2 p-3 rounded-lg bg-card/30 border border-border/30 text-center">
                     <feature.icon className="w-6 h-6 text-primary" />
-                    <span className="text-xs font-medium">{feature.text}</span>
+                    <span className="text-xs font-medium text-white">{feature.text}</span>
                 </div>
             ))}
           </div>
