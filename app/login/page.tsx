@@ -5,8 +5,9 @@ import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { Sparkles, BookOpen, MessageCircle, Users, Trophy } from "lucide-react"
+import { Sparkles, BookOpen, MessageCircle, Users, Trophy, ShieldCheck } from "lucide-react"
 import Image from "next/image"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function LoginPage() {
   const [name, setName] = useState("")
@@ -95,6 +96,22 @@ export default function LoginPage() {
             >
               {isLoading ? "Iniciando..." : "Comenzar Viaje"}
             </Button>
+            
+            <div className="flex justify-center mt-4">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground cursor-help hover:text-primary transition-colors bg-secondary/30 px-3 py-1.5 rounded-full border border-border/30">
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                <span>100% Gratis y Seguro</span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs text-center p-3">
+                            <p>Esta aplicación es totalmente gratuita. No guardamos tus datos personales fuera de tu progreso y no compartimos información con terceros.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
           </form>
         </Card>
 

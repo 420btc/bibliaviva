@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { AuthProvider } from "@/components/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SettingsProvider } from "@/components/settings-provider"
+import { CookieBanner } from "@/components/cookie-banner"
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -48,6 +49,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               {children}
+              <CookieBanner />
               <Analytics />
               <Toaster />
             </ThemeProvider>
