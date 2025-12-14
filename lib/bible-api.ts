@@ -115,8 +115,8 @@ interface BollsVerse {
 // Obtener un capítulo completo (versión por defecto RV1960)
 export async function getChapter(bookName: string, chapter: number): Promise<ChapterResponse> {
   const bookId = getBollsBookId(bookName)
-  // Bolls API: https://bolls.life/get-text/RVR60/BOOK_ID/CHAPTER/
-  const res = await fetch(`${API_BASE}/get-text/RVR60/${bookId}/${chapter}/`)
+  // Bolls API: https://bolls.life/get-text/RV1960/BOOK_ID/CHAPTER/
+  const res = await fetch(`${API_BASE}/get-text/RV1960/${bookId}/${chapter}/`)
   
   if (!res.ok) throw new Error(`Error al cargar ${bookName} ${chapter}`)
   
@@ -139,7 +139,7 @@ export async function getChapter(bookName: string, chapter: number): Promise<Cha
 }
 
 // Obtener un capítulo en una versión específica (ej: "nvi", "rv1960")
-// Nota: Bolls soporta muchas versiones, mapeamos a las disponibles o fallback a RVR60
+// Nota: Bolls soporta muchas versiones, mapeamos a las disponibles o fallback a RV1960
 export async function getChapterWithVersion(
   version: string,
   bookName: string,
@@ -147,13 +147,13 @@ export async function getChapterWithVersion(
 ): Promise<ChapterResponse> {
   // Mapeo simple de versiones comunes a códigos Bolls
   const versionMap: Record<string, string> = {
-    "rv1960": "RVR60",
-    "nvi": "NVI", // Verificar si Bolls tiene NVI, si no usar RVR60
+    "rv1960": "RV1960",
+    "nvi": "NVI", // Verificar si Bolls tiene NVI, si no usar RV1960
     "dhh": "DHH",
-    "bla": "BLA"
+    "bla": "LBLA"
   }
   
-  const bollsVersion = versionMap[version.toLowerCase()] || "RVR60"
+  const bollsVersion = versionMap[version.toLowerCase()] || "RV1960"
   const bookId = getBollsBookId(bookName)
   
   const res = await fetch(`${API_BASE}/get-text/${bollsVersion}/${bookId}/${chapter}/`)

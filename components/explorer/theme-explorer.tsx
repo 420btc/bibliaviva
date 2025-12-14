@@ -88,51 +88,60 @@ const createConnections = (): Connection[] => {
 
 export function ThemeExplorer() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [nodes, setNodes] = useState<Node[]>(createInitialNodes)
-  const [connections] = useState<Connection[]>(createConnections)
+  // Usamos ref para la animación fluida sin re-renders constantes
+  const nodesRef = useRef<Node[]>([])
+  const initializedRef = useRef(false)
+  
+  // Estado solo para reactividad de UI externa si es necesario, pero la animación va por ref
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [zoom, setZoom] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | null>(null)
+  
+  // Inicialización única
+  useEffect(() => {
+    if (!initializedRef.current) {
+      nodesRef.current = createInitialNodes()
+      initializedRef.current = true
+    }
+  }, [])
 
-  // Simulación de física simplificada
+  const [connections] = useState<Connection[]>(createConnections)
+
+  // Simulación de física simplificada (trabaja directamente sobre refs)
   const updatePhysics = useCallback(() => {
-    setNodes((prevNodes) => {
-      const newNodes = prevNodes.map((node) => ({ ...node }))
-
-      // Aplicar fuerzas
-      newNodes.forEach((node, i) => {
-        // Repulsión entre nodos
-        newNodes.forEach((other, j) => {
-          if (i === j) return
-          const dx = node.x - other.x
-          const dy = node.y - other.y
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1
-          const force = 1000 / (dist * dist)
-          node.vx += (dx / dist) * force * 0.01
-          node.vy += (dy / dist) * force * 0.01
-        })
-
-        // Atracción al centro
-        const centerX = 400
-        const centerY = 300
-        node.vx += (centerX - node.x) * 0.0001
-        node.vy += (centerY - node.y) * 0.0001
-
-        // Fricción
-        node.vx *= 0.95
-        node.vy *= 0.95
-
-        // Actualizar posición
-        node.x += node.vx
-        node.y += node.vy
-
-        // Límites
-        node.x = Math.max(50, Math.min(750, node.x))
-        node.y = Math.max(50, Math.min(550, node.y))
+    const nodes = nodesRef.current
+    
+    // Aplicar fuerzas
+    nodes.forEach((node, i) => {
+      // Repulsión entre nodos
+      nodes.forEach((other, j) => {
+        if (i === j) return
+        const dx = node.x - other.x
+        const dy = node.y - other.y
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1
+        const force = 1000 / (dist * dist)
+        node.vx += (dx / dist) * force * 0.01
+        node.vy += (dy / dist) * force * 0.01
       })
 
-      return newNodes
+      // Atracción al centro
+      const centerX = 400
+      const centerY = 300
+      node.vx += (centerX - node.x) * 0.0001
+      node.vy += (centerY - node.y) * 0.0001
+
+      // Fricción
+      node.vx *= 0.95
+      node.vy *= 0.95
+
+      // Actualizar posición
+      node.x += node.vx
+      node.y += node.vy
+
+      // Límites
+      node.x = Math.max(50, Math.min(750, node.x))
+      node.y = Math.max(50, Math.min(550, node.y))
     })
   }, [])
 
@@ -150,6 +159,8 @@ export function ThemeExplorer() {
       // Aplicar zoom
       ctx.save()
       ctx.scale(zoom, zoom)
+
+      const nodes = nodesRef.current
 
       // Dibujar conexiones
       connections.forEach((conn) => {
@@ -207,7 +218,7 @@ export function ThemeExplorer() {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [nodes, connections, selectedNode, zoom, updatePhysics])
+  }, [connections, selectedNode, zoom, updatePhysics])
 
   // Manejar clic en canvas
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -218,7 +229,7 @@ export function ThemeExplorer() {
     const x = (e.clientX - rect.left) / zoom
     const y = (e.clientY - rect.top) / zoom
 
-    const clickedNode = nodes.find((node) => {
+    const clickedNode = nodesRef.current.find((node) => {
       const radius = node.type === "theme" ? 30 : 20
       const dx = node.x - x
       const dy = node.y - y
@@ -271,7 +282,7 @@ export function ThemeExplorer() {
               <button
                 key={theme.id}
                 onClick={() => {
-                  const node = nodes.find((n) => n.id === `theme-${theme.id}`)
+                  const node = nodesRef.current.find((n) => n.id === `theme-${theme.id}`)
                   setSelectedNode(node || null)
                 }}
                 className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-colors text-left"
@@ -291,7 +302,7 @@ export function ThemeExplorer() {
               <button
                 key={char.id}
                 onClick={() => {
-                  const node = nodes.find((n) => n.id === `char-${char.id}`)
+                  const node = nodesRef.current.find((n) => n.id === `char-${char.id}`)
                   setSelectedNode(node || null)
                 }}
                 className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-colors text-left"
