@@ -25,13 +25,14 @@ import {
   Loader2,
   Settings2,
   Trash2,
-  X
+  X,
+  HelpCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUserProgress } from "@/hooks/use-user-progress"
 import { useSettings } from "@/components/settings-provider"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { generateVerseAudio } from "@/lib/openai-actions"
 import { toast } from "sonner"
 import {
@@ -62,6 +63,7 @@ const fetcher = async ([bookId, chapter]: [string, number]): Promise<ChapterResp
 
 export function BibleReader() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [selectedBook, setSelectedBook] = useState<BibleBookLocal>(bibleBooks.antiguoTestamento[0]) // Génesis por defecto
   const [selectedChapter, setSelectedChapter] = useState(1)
   const [selectedVerses, setSelectedVerses] = useState<number[]>([])
@@ -613,6 +615,26 @@ export function BibleReader() {
                   title="Quitar resaltado"
                 >
                   <Trash2 className="w-4 h-4" />
+                </Button>
+
+                {/* Botón para consultar a la IA */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-8 h-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors ml-1"
+                  title="Preguntar a la IA"
+                  onClick={() => {
+                    const versesToAsk = selectedVerses.sort((a, b) => a - b)
+                    const verseText = versesToAsk.map(v => 
+                      chapterData?.vers.find(verse => parseInt(verse.number) === v)?.verse
+                    ).join(" ")
+                    
+                    const reference = `${selectedBook.nombre} ${selectedChapter}:${versesToAsk.join(",")}`
+                    
+                    router.push(`/chat?verse=${encodeURIComponent(reference)}&text=${encodeURIComponent(verseText)}`)
+                  }}
+                >
+                  <HelpCircle className="w-4 h-4" />
                 </Button>
 
                 <div className="w-px h-6 bg-border mx-2" />
