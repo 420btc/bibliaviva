@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { dailyVerses } from "@/lib/bible-data"
-import { Share2, Bookmark, Volume2, Sparkles, Loader2, X } from "lucide-react"
+import { dailyVerses, getAllBooksFlat } from "@/lib/bible-data"
+import { Share2, Bookmark, Volume2, Sparkles, Loader2, X, Copy } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { generateVerseImage, generateVerseAudio } from "@/lib/openai-actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useUserProgress } from "@/hooks/use-user-progress"
+import { toast } from "sonner"
 
 export function VerseOfDay() {
   const [verse, setVerse] = useState(dailyVerses[0])
@@ -16,14 +17,76 @@ export function VerseOfDay() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [isLoadingVerse, setIsLoadingVerse] = useState(true)
   
   const { addXP } = useUserProgress()
 
   useEffect(() => {
-    const today = new Date().getDate()
-    const index = today % dailyVerses.length
-    setVerse(dailyVerses[index])
+    const loadDailyVerse = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        const savedDate = localStorage.getItem("biblia-viva-daily-verse-date")
+        const savedVerse = localStorage.getItem("biblia-viva-daily-verse")
+
+        if (savedDate === today && savedVerse) {
+          setVerse(JSON.parse(savedVerse))
+          setIsLoadingVerse(false)
+          return
+        }
+
+        // Fetch new random verse
+        const res = await fetch('https://bolls.life/get-random-verse/RV1960/')
+        if (!res.ok) throw new Error('Failed to fetch verse')
+        
+        const data = await res.json()
+        const books = getAllBooksFlat()
+        const bookName = books[data.book - 1]?.nombre || "Biblia"
+        
+        const newVerse = {
+          libro: bookName,
+          capitulo: data.chapter,
+          versiculo: data.verse,
+          texto: data.text,
+          version: "Reina-Valera 1960"
+        }
+
+        setVerse(newVerse)
+        localStorage.setItem("biblia-viva-daily-verse", JSON.stringify(newVerse))
+        localStorage.setItem("biblia-viva-daily-verse-date", today)
+      } catch (error) {
+        console.error("Error loading daily verse:", error)
+        // Fallback to static list based on date
+        const todayDate = new Date().getDate()
+        const index = todayDate % dailyVerses.length
+        setVerse(dailyVerses[index])
+      } finally {
+        setIsLoadingVerse(false)
+      }
+    }
+
+    loadDailyVerse()
   }, [])
+
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Versículo del Día - Biblia Viva',
+      text: `"${verse.texto}" - ${verse.libro} ${verse.capitulo}:${verse.versiculo}`,
+      url: window.location.href
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        addXP(10)
+        toast.success("¡Versículo compartido! +10 XP")
+      } else {
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
+        toast.success("Copiado al portapapeles")
+      }
+    } catch (err) {
+      console.error('Error sharing:', err)
+    }
+  }
 
   const handleListen = async () => {
     if (isPlaying && audioUrl) {
@@ -76,6 +139,13 @@ export function VerseOfDay() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Card className="relative overflow-hidden glass-card p-6 lg:p-8">
+        {isLoadingVerse ? (
+           <div className="flex flex-col items-center justify-center py-12 gap-4">
+             <Loader2 className="w-8 h-8 animate-spin text-primary" />
+             <p className="text-sm text-muted-foreground">Buscando inspiración divina...</p>
+           </div>
+        ) : (
+          <>
         {/* Fondo decorativo */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary rounded-full blur-3xl" />
@@ -124,7 +194,7 @@ export function VerseOfDay() {
               Guardar
             </Button>
             
-            <Button variant="secondary" size="sm" className="gap-2">
+            <Button variant="secondary" size="sm" className="gap-2" onClick={handleShare}>
               <Share2 className="w-4 h-4" />
               Compartir
             </Button>
@@ -145,6 +215,8 @@ export function VerseOfDay() {
             </Button>
           </div>
         </div>
+        </>
+        )}
       </Card>
 
       {/* Audio Element oculto */}
