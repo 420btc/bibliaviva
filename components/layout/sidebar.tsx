@@ -49,87 +49,91 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card/30 backdrop-blur-md h-screen sticky top-0">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="relative w-12 h-12">
-              <Image 
-                src="/biblia.png" 
-                alt="Logo Biblia Viva" 
-                fill
-                className="object-contain"
-                priority
-              />
+      <aside className="hidden lg:flex flex-col w-72 border-r border-border bg-card/30 backdrop-blur-md h-screen sticky top-0">
+        <div className="flex flex-col h-full">
+          <div className="p-6 pb-2">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="relative w-14 h-14">
+                <Image 
+                  src="/biblia.png" 
+                  alt="Logo Biblia Viva" 
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <div>
+                <h1 className="font-bold text-2xl text-foreground tracking-tight">Biblia Viva</h1>
+                <p className="text-sm text-muted-foreground">Tu guía espiritual</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-xl text-foreground tracking-tight">Biblia Viva</h1>
-              <p className="text-xs text-muted-foreground">Tu guía espiritual</p>
+
+            <div className="mb-6 p-5 rounded-2xl bg-secondary/50 border border-border/50 shadow-sm">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <Crown className="w-6 h-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-foreground truncate">
+                    {user?.name || "Invitado"}
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    Nivel {progress.nivel} • {progress.titulo}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground font-medium">XP Total</span>
+                  <span className="font-bold text-foreground">{progress.xp}/{progress.xpParaSiguienteNivel}</span>
+                </div>
+                <Progress value={progressPercent} className="h-2.5" />
+              </div>
             </div>
           </div>
 
-          <div className="mb-8 p-4 rounded-xl bg-secondary/50 border border-border/50">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <Crown className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {user?.name || "Invitado"}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  Nivel {progress.nivel} • {progress.titulo}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">XP</span>
-                <span className="font-medium text-foreground">{progress.xp}/{progress.xpParaSiguienteNivel}</span>
-              </div>
-              <Progress value={progressPercent} className="h-2" />
-            </div>
+          <div className="flex-1 overflow-y-auto px-4 py-2">
+            <nav className="space-y-1.5">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <Link key={item.href} href={item.href} className="block">
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "w-full justify-start gap-4 px-4 py-6 text-base font-medium transition-all duration-200",
+                        isActive
+                          ? "bg-primary/10 text-primary hover:bg-primary/15 shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      )}
+                    >
+                      <item.icon className={cn("w-6 h-6", isActive && "text-primary")} />
+                      {item.label}
+                    </Button>
+                  </Link>
+                )
+              })}
+            </nav>
           </div>
 
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      "w-full justify-start gap-3 mb-1 font-medium",
-                      isActive
-                        ? "bg-primary/10 text-primary hover:bg-primary/15"
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                    )}
-                  >
-                    <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
-                    {item.label}
-                  </Button>
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
-
-        <div className="mt-auto p-6 border-t border-border">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-secondary/50 mb-2"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Settings className="w-5 h-5" />
-            Configuración
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-red-400 hover:text-red-500 hover:bg-red-500/10"
-            onClick={logout}
-          >
-            <LogOut className="w-5 h-5" />
-            Cerrar Sesión
-          </Button>
+          <div className="p-6 border-t border-border mt-auto bg-card/10">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-4 px-4 py-6 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 mb-2"
+              onClick={() => setSettingsOpen(true)}
+            >
+              <Settings className="w-6 h-6" />
+              Configuración
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-4 px-4 py-6 text-base font-medium text-red-400 hover:text-red-500 hover:bg-red-500/10"
+              onClick={logout}
+            >
+              <LogOut className="w-6 h-6" />
+              Cerrar Sesión
+            </Button>
+          </div>
         </div>
       </aside>
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
