@@ -20,8 +20,8 @@ export function PopularThemes() {
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {themes.slice(0, 8).map((theme, index) => (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {themes.slice(0, 9).map((theme, index) => (
           <motion.div
             key={theme.id}
             initial={{ opacity: 0, scale: 0.9 }}

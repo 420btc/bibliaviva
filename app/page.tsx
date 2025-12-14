@@ -22,12 +22,12 @@ export default function HomePage() {
             <VerseOfDay />
             <QuickActions />
             <DailyChallenges />
-            <PopularThemes />
           </div>
 
           {/* Columna derecha - Progreso */}
           <div className="space-y-6">
             <ProgressRing />
+            <PopularThemes />
           </div>
         </div>
         
