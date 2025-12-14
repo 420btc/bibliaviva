@@ -4,12 +4,13 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { dailyVerses, getAllBooksFlat } from "@/lib/bible-data"
-import { Share2, Bookmark, Volume2, Sparkles, Loader2, X, Copy } from "lucide-react"
+import { Share2, Bookmark, Volume2, Sparkles, Loader2, X, Copy, BookOpen } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { generateVerseImage, generateVerseAudio } from "@/lib/openai-actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useUserProgress } from "@/hooks/use-user-progress"
 import { toast } from "sonner"
+import Link from "next/link"
 
 export function VerseOfDay() {
   const [verse, setVerse] = useState(dailyVerses[0])
@@ -29,7 +30,10 @@ export function VerseOfDay() {
         const savedVerse = localStorage.getItem("biblia-viva-daily-verse")
 
         if (savedDate === today && savedVerse) {
-          setVerse(JSON.parse(savedVerse))
+          const parsed = JSON.parse(savedVerse)
+          // Limpiar etiquetas HTML residuales si existen
+          parsed.texto = parsed.texto.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '')
+          setVerse(parsed)
           setIsLoadingVerse(false)
           return
         }
@@ -42,11 +46,14 @@ export function VerseOfDay() {
         const books = getAllBooksFlat()
         const bookName = books[data.book - 1]?.nombre || "Biblia"
         
+        // Limpiar el texto de etiquetas HTML
+        const cleanText = data.text.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>/g, '')
+
         const newVerse = {
           libro: bookName,
           capitulo: data.chapter,
           versiculo: data.verse,
-          texto: data.text,
+          texto: cleanText,
           version: "Reina-Valera 1960"
         }
 
@@ -183,10 +190,15 @@ export function VerseOfDay() {
           </blockquote>
 
           {/* Referencia */}
-          <p className="text-primary font-semibold mb-6">
-            {verse.libro} {verse.capitulo}:{verse.versiculo}
-            <span className="text-muted-foreground font-normal ml-2">— {verse.version}</span>
-          </p>
+          <Link href={`/biblia?libro=${verse.libro}&capitulo=${verse.capitulo}&versiculo=${verse.versiculo}`}>
+            <div className="inline-flex items-center gap-2 mb-6 group cursor-pointer">
+              <p className="text-primary font-semibold group-hover:underline decoration-primary/50 underline-offset-4 transition-all">
+                {verse.libro} {verse.capitulo}:{verse.versiculo}
+              </p>
+              <BookOpen className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -ml-1 group-hover:ml-0" />
+              <span className="text-muted-foreground font-normal text-sm">— {verse.version}</span>
+            </div>
+          </Link>
 
           {/* Acciones */}
           <div className="flex flex-wrap gap-2">

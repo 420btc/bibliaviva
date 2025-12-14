@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUserProgress } from "@/hooks/use-user-progress"
 import { useSettings } from "@/components/settings-provider"
+import { useSearchParams } from "next/navigation"
 
 const highlightColors = [
   { name: "Amarillo", class: "bg-yellow-500/30", color: "#eab308" },
@@ -40,9 +41,46 @@ const fetcher = async ([bookId, chapter]: [string, number]): Promise<ChapterResp
 }
 
 export function BibleReader() {
+  const searchParams = useSearchParams()
   const [selectedBook, setSelectedBook] = useState<BibleBookLocal>(bibleBooks.antiguoTestamento[0]) // Génesis por defecto
   const [selectedChapter, setSelectedChapter] = useState(1)
   const [selectedVerses, setSelectedVerses] = useState<number[]>([])
+  
+  // Efecto para cargar libro/capítulo desde URL
+  useEffect(() => {
+    const libroParam = searchParams.get("libro")
+    const capituloParam = searchParams.get("capitulo")
+    const versiculoParam = searchParams.get("versiculo")
+
+    if (libroParam) {
+      const allBooks = [...bibleBooks.antiguoTestamento, ...bibleBooks.nuevoTestamento]
+      const foundBook = allBooks.find(b => b.nombre.toLowerCase() === libroParam.toLowerCase())
+      
+      if (foundBook) {
+        setSelectedBook(foundBook)
+        if (capituloParam) {
+          const capNum = parseInt(capituloParam)
+          if (!isNaN(capNum) && capNum > 0 && capNum <= foundBook.capitulos) {
+            setSelectedChapter(capNum)
+          }
+        }
+        if (versiculoParam) {
+          const versNum = parseInt(versiculoParam)
+          if (!isNaN(versNum)) {
+            setSelectedVerses([versNum])
+            // Intentar hacer scroll al versículo después de un breve delay para asegurar que cargó
+            setTimeout(() => {
+              const element = document.getElementById(`verse-${versNum}`)
+              if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              }
+            }, 1000)
+          }
+        }
+      }
+    }
+  }, [searchParams])
+
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
   const [showBookSelector, setShowBookSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -416,6 +454,7 @@ export function BibleReader() {
                 
                 return (
                   <div 
+                    id={`verse-${verseNum}`}
                     key={verse.id || verse.number}
                     onClick={() => toggleVerseSelection(verseNum)}
                     className={cn(
