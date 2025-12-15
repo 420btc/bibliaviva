@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import useSWR from "swr"
 import { bibleBooks, getAllBooksFlat, type BibleBookLocal } from "@/lib/bible-data"
-import { getChapter, searchBible, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
+import { getChapter, searchBible, SUPPORTED_VERSIONS, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
@@ -27,7 +27,10 @@ import {
   Trash2,
   X,
   HelpCircle,
-  CheckCircle2
+  CheckCircle2,
+  MapPin,
+  Split,
+  Globe
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -51,6 +54,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { BibleMapView } from "./bible-map-view"
 
 const highlightColors = [
   { name: "Amarillo", class: "bg-yellow-500/30", color: "#eab308" },
@@ -61,8 +72,8 @@ const highlightColors = [
 ]
 
 // Fetcher para SWR
-const fetcher = async ([bookId, chapter]: [string, number]): Promise<ChapterResponse> => {
-  return getChapter(bookId, chapter)
+const fetcher = async ([bookId, chapter, version]: [string, number, string]): Promise<ChapterResponse> => {
+  return getChapter(bookId, chapter, version)
 }
 
 export function BibleReader() {
@@ -73,6 +84,11 @@ export function BibleReader() {
   const [selectedChapter, setSelectedChapter] = useState(1)
   const [selectedVerses, setSelectedVerses] = useState<number[]>([])
   
+  // New States for Features
+  const [isComparing, setIsComparing] = useState(false)
+  const [secondaryVersion, setSecondaryVersion] = useState("nvi")
+  const [isMapOpen, setIsMapOpen] = useState(false)
+
   // Efecto para cargar libro/capítulo desde URL o DB/LocalStorage
   useEffect(() => {
     const loadInitialState = async () => {
@@ -214,10 +230,23 @@ export function BibleReader() {
     data: chapterData,
     error,
     isLoading,
-  } = useSWR<ChapterResponse>([selectedBook.id, selectedChapter], fetcher, {
+  } = useSWR<ChapterResponse>([selectedBook.id, selectedChapter, "rv1960"], fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   })
+
+  // Secondary Version Data
+  const {
+    data: secondaryChapterData,
+    isLoading: isLoadingSecondary,
+  } = useSWR<ChapterResponse>(
+    isComparing ? [selectedBook.id, selectedChapter, secondaryVersion] : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  )
 
   // Track reading progress
   useEffect(() => {
@@ -727,6 +756,35 @@ export function BibleReader() {
             <Search className="w-4 h-4" />
           </Button>
 
+          {/* New Feature Buttons */}
+          <div className="flex items-center gap-1 border-l border-r border-border px-2 mx-1">
+             <Button 
+               variant={isComparing ? "secondary" : "ghost"} 
+               size="icon" 
+               className="h-8 w-8"
+               onClick={() => setIsComparing(!isComparing)}
+               title="Comparar Versiones"
+             >
+               <Split className="w-4 h-4" />
+             </Button>
+             
+             <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Mapa y Contexto">
+                    <MapPin className="w-4 h-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-[95vw] sm:max-w-[95vw] w-full h-[90vh] p-0 overflow-hidden flex flex-col">
+                  <DialogHeader className="p-6 pb-2 shrink-0">
+                    <DialogTitle>Contexto Geográfico - {selectedBook.nombre} {selectedChapter}</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-hidden">
+                    <BibleMapView book={selectedBook.nombre} chapter={selectedChapter} />
+                  </div>
+                </DialogContent>
+              </Dialog>
+          </div>
+
           <div className="flex items-center border rounded-md overflow-hidden">
             <Button 
               variant="ghost" 
@@ -937,10 +995,13 @@ export function BibleReader() {
       </header>
 
       {/* Área de lectura */}
-      {viewMode === "book" && !isLoading && !error ? (
+      {viewMode === "book" && !isComparing && !isLoading && !error ? (
         <BookView />
       ) : (
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full">
+        <div className={cn(
+          "flex-1 overflow-y-auto p-4 md:p-8 w-full",
+          isComparing ? "max-w-full" : "max-w-4xl mx-auto"
+        )}>
           {isLoading ? (
             <div className="space-y-4 animate-pulse">
               {[...Array(10)].map((_, i) => (
@@ -958,46 +1019,96 @@ export function BibleReader() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-1 pb-20">
-              <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold font-serif text-foreground mb-2">
-                  {selectedBook.nombre} {selectedChapter}
-                </h1>
-                <p className="text-sm text-muted-foreground uppercase tracking-widest">Reina-Valera 1960</p>
-              </div>
-              
-              {chapterData?.vers.map((verse) => {
-                const verseNum = parseInt(verse.number)
-                const isSelected = selectedVerses.includes(verseNum)
-                const isPlayingVerse = playingVerse === verseNum
-                const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
+            <div className={cn("grid gap-8 pb-20", isComparing ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
+              {/* Columna Principal */}
+              <div className="space-y-1">
+                <div className="mb-8 text-center sticky top-0 bg-background/95 backdrop-blur py-4 z-10 border-b">
+                  <h1 className="text-2xl font-bold font-serif text-foreground mb-1">
+                    {selectedBook.nombre} {selectedChapter}
+                  </h1>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Reina-Valera 1960</p>
+                </div>
                 
-                return (
-                  <div 
-                    id={`verse-${verseNum}`}
-                    key={verse.id || verse.number}
-                    onClick={() => toggleVerseSelection(verseNum)}
-                    className={cn(
-                      "relative group px-2 py-1 rounded transition-all duration-300 cursor-pointer hover:bg-muted/50",
-                      isSelected && "bg-primary/10",
-                      isPlayingVerse && "bg-primary/20 shadow-sm ring-1 ring-primary/30",
-                      highlightClass
-                    )}
-                  >
-                    <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
-                      {verse.number}
-                    </span>
-                    <p 
-                      className="leading-relaxed font-serif text-foreground"
-                      style={{ fontSize: `${fontSize}px` }}
+                {chapterData?.vers.map((verse) => {
+                  const verseNum = parseInt(verse.number)
+                  const isSelected = selectedVerses.includes(verseNum)
+                  const isPlayingVerse = playingVerse === verseNum
+                  const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
+                  
+                  return (
+                    <div 
+                      id={`verse-${verseNum}`}
+                      key={verse.id || verse.number}
+                      onClick={() => toggleVerseSelection(verseNum)}
+                      className={cn(
+                        "relative group px-2 py-1 rounded transition-all duration-300 cursor-pointer hover:bg-muted/50",
+                        isSelected && "bg-primary/10",
+                        isPlayingVerse && "bg-primary/20 shadow-sm ring-1 ring-primary/30",
+                        highlightClass
+                      )}
                     >
-                      {verse.verse}
-                    </p>
+                      <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
+                        {verse.number}
+                      </span>
+                      <p 
+                        className="leading-relaxed font-serif text-foreground"
+                        style={{ fontSize: `${fontSize}px` }}
+                      >
+                        {verse.verse}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Columna Secundaria (Solo visible en Comparación) */}
+              {isComparing && (
+                <div className="space-y-1 border-l pl-4 md:pl-8 border-dashed border-border/50">
+                   <div className="mb-8 text-center sticky top-0 bg-background/95 backdrop-blur py-2 z-10 border-b flex flex-col items-center gap-2">
+                      <Select value={secondaryVersion} onValueChange={setSecondaryVersion}>
+                        <SelectTrigger className="w-[200px] h-8 text-xs">
+                          <SelectValue placeholder="Seleccionar versión" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SUPPORTED_VERSIONS.map(v => (
+                            <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                   </div>
-                )
-              })}
+
+                  {isLoadingSecondary ? (
+                    <div className="space-y-4 animate-pulse mt-4">
+                      {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex gap-4">
+                          <div className="w-6 h-4 bg-muted rounded" />
+                          <div className="flex-1 h-4 bg-muted rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    secondaryChapterData?.vers.map((verse) => (
+                      <div 
+                        key={`sec-${verse.id || verse.number}`}
+                        className="relative group px-2 py-1 rounded hover:bg-muted/30"
+                      >
+                        <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-30 font-medium w-4 text-right select-none">
+                          {verse.number}
+                        </span>
+                        <p 
+                          className="leading-relaxed font-serif text-muted-foreground"
+                          style={{ fontSize: `${fontSize}px` }}
+                        >
+                          {verse.verse}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
               
-              <div className="flex flex-col gap-4 mt-12 pt-8 border-t border-border">
+              {/* Controles de navegación (Shared) */}
+              <div className={cn("flex flex-col gap-4 mt-12 pt-8 border-t border-border col-span-full")}>
                 <Button 
                   className="w-full md:w-auto mx-auto gap-2 shadow-sm bg-zinc-200 text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-700 transition-all"
                   size="default"

@@ -112,11 +112,20 @@ interface BollsVerse {
   comment?: string
 }
 
+export const SUPPORTED_VERSIONS = [
+  { id: "rv1960", name: "Reina Valera 1960", apiCode: "RV1960" },
+  { id: "dhh", name: "Dios Habla Hoy", apiCode: "DHH" },
+  { id: "lbla", name: "La Biblia de las Américas", apiCode: "LBLA" },
+  { id: "nvi", name: "Nueva Versión Internacional", apiCode: "NVI" }
+]
+
 // Obtener un capítulo completo (versión por defecto RV1960)
-export async function getChapter(bookName: string, chapter: number): Promise<ChapterResponse> {
+export async function getChapter(bookName: string, chapter: number, version: string = "rv1960"): Promise<ChapterResponse> {
+  const versionInfo = SUPPORTED_VERSIONS.find(v => v.id === version) || SUPPORTED_VERSIONS[0]
   const bookId = getBollsBookId(bookName)
-  // Bolls API: https://bolls.life/get-text/RV1960/BOOK_ID/CHAPTER/
-  const res = await fetch(`${API_BASE}/get-text/RV1960/${bookId}/${chapter}/`)
+  
+  // Bolls API: https://bolls.life/get-text/VERSION/BOOK_ID/CHAPTER/
+  const res = await fetch(`${API_BASE}/get-text/${versionInfo.apiCode}/${bookId}/${chapter}/`)
   
   if (!res.ok) throw new Error(`Error al cargar ${bookName} ${chapter}`)
   
@@ -138,44 +147,6 @@ export async function getChapter(bookName: string, chapter: number): Promise<Cha
   }
 }
 
-// Obtener un capítulo en una versión específica (ej: "nvi", "rv1960")
-// Nota: Bolls soporta muchas versiones, mapeamos a las disponibles o fallback a RV1960
-export async function getChapterWithVersion(
-  version: string,
-  bookName: string,
-  chapter: number,
-): Promise<ChapterResponse> {
-  // Mapeo simple de versiones comunes a códigos Bolls
-  const versionMap: Record<string, string> = {
-    "rv1960": "RV1960",
-    "nvi": "NVI", // Verificar si Bolls tiene NVI, si no usar RV1960
-    "dhh": "DHH",
-    "bla": "LBLA"
-  }
-  
-  const bollsVersion = versionMap[version.toLowerCase()] || "RV1960"
-  const bookId = getBollsBookId(bookName)
-  
-  const res = await fetch(`${API_BASE}/get-text/${bollsVersion}/${bookId}/${chapter}/`)
-  if (!res.ok) throw new Error(`Error al cargar ${bookName} ${chapter} en ${version}`)
-    
-  const bollsVerses: BollsVerse[] = await res.json()
-  const localBook = getAllBooksFlat()[bookId - 1]
-
-  return {
-    book: localBook.nombre,
-    chapter: chapter.toString(),
-    vers: bollsVerses.map(v => ({
-      number: v.verse.toString(),
-      verse: stripHtml(v.text),
-      id: v.pk.toString()
-    })),
-    testament: bookId <= 39 ? "Antiguo Testamento" : "Nuevo Testamento",
-    num_chapters: localBook.capitulos
-  }
-}
-
-// Obtener un versículo específico
 export async function getVerse(bookName: string, chapter: number, verse: number): Promise<Verse> {
   const chapterData = await getChapter(bookName, chapter)
   const v = chapterData.vers.find(v => v.number === verse.toString())

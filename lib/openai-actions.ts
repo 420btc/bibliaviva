@@ -42,6 +42,46 @@ export async function generateVerseAudio(verseText: string, voice: "alloy" | "ec
   }
 }
 
+export async function getGeographicContext(book: string, chapter: number) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `Eres un experto geógrafo e historiador bíblico. Tu tarea es analizar el capítulo ${chapter} del libro de ${book} y extraer los lugares geográficos mencionados o relevantes para el contexto. 
+          Devuelve SOLO un objeto JSON válido con la siguiente estructura:
+          {
+            "locations": [
+              {
+                "name": "Nombre del lugar",
+                "description": "Breve descripción histórica/bíblica de 1-2 frases sobre su relevancia en este capítulo.",
+                "coordinates": { "lat": 31.7683, "lng": 35.2137 } (Coordenadas aproximadas reales),
+                "type": "city" | "mountain" | "river" | "region" | "other"
+              }
+            ],
+            "summary": "Un resumen muy breve (max 30 palabras) del movimiento geográfico en este capítulo."
+          }
+          Si no hay lugares mencionados, devuelve una lista vacía y un resumen indicando que es un pasaje sin movimiento geográfico específico.`
+        },
+        {
+          role: "user",
+          content: `Analiza ${book} capítulo ${chapter}`
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3,
+    })
+
+    const content = response.choices[0].message.content
+    if (!content) return null
+    return JSON.parse(content)
+  } catch (error) {
+    console.error("Error getting geographic context:", error)
+    return { locations: [], summary: "No se pudo cargar el contexto geográfico." }
+  }
+}
+
 export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "system"; content: string }[]) {
   try {
     const tools = [
