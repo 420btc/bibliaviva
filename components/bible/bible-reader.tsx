@@ -31,7 +31,8 @@ import {
   MapPin,
   Split,
   Globe,
-  Library
+  Library,
+  BookOpen
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -62,7 +63,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { BibleMapView } from "./bible-map-view"
+import { HEBREW_GLOSSARY, searchGlossary } from "@/lib/hebrew-glossary"
 
 const highlightColors = [
   { name: "Amarillo", class: "bg-yellow-500/30", color: "#eab308" },
@@ -91,6 +101,7 @@ export function BibleReader() {
   const [isMapOpen, setIsMapOpen] = useState(false)
   const [currentEdition, setCurrentEdition] = useState<"CHRISTIAN" | "MESSIANIC">("CHRISTIAN")
   const [primaryVersion, setPrimaryVersion] = useState("rv1960")
+  const [glossaryQuery, setGlossaryQuery] = useState("")
 
   // Efecto para cargar libro/capítulo desde URL o DB/LocalStorage
   useEffect(() => {
@@ -795,6 +806,60 @@ export function BibleReader() {
 
           {/* New Feature Buttons */}
           <div className="flex items-center gap-1 border-l border-r border-border px-2 mx-1">
+             {currentEdition === "MESSIANIC" && (
+               <Sheet>
+                 <SheetTrigger asChild>
+                   <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Glosario Hebreo">
+                     <BookOpen className="w-4 h-4" />
+                   </Button>
+                 </SheetTrigger>
+                 <SheetContent className="flex flex-col h-full">
+                  <SheetHeader className="shrink-0">
+                    <SheetTitle className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5" />
+                      Glosario Hebreo
+                    </SheetTitle>
+                    <SheetDescription>
+                      Diccionario de términos y conceptos mesiánicos.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-4 flex-1 flex flex-col min-h-0">
+                    <div className="relative shrink-0 mb-4">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar término..."
+                        className="pl-9"
+                        value={glossaryQuery}
+                        onChange={(e) => setGlossaryQuery(e.target.value)}
+                      />
+                    </div>
+                    <ScrollArea className="flex-1 -mx-6 px-6 h-full">
+                      <div className="space-y-4 pb-10">
+                        {searchGlossary(glossaryQuery).map((term, index) => (
+                           <div key={index} className="space-y-1 pb-4 border-b last:border-0">
+                             <div className="flex items-baseline justify-between">
+                               <h4 className="font-semibold text-sm text-primary">{term.term}</h4>
+                               <span className="text-xs text-muted-foreground italic">{term.transliteration}</span>
+                             </div>
+                             <p className="text-sm font-medium">{term.meaning}</p>
+                             <p className="text-sm text-muted-foreground leading-relaxed">{term.description}</p>
+                             <span className="inline-block px-2 py-0.5 rounded-full bg-secondary text-[10px] uppercase tracking-wider text-secondary-foreground">
+                               {term.category}
+                             </span>
+                           </div>
+                         ))}
+                         {searchGlossary(glossaryQuery).length === 0 && (
+                           <div className="text-center py-8 text-muted-foreground">
+                             No se encontraron términos.
+                           </div>
+                         )}
+                       </div>
+                     </ScrollArea>
+                   </div>
+                 </SheetContent>
+               </Sheet>
+             )}
+
              <Button 
                variant={isComparing ? "secondary" : "ghost"} 
                size="icon" 
