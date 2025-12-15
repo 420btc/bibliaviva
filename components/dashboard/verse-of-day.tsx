@@ -21,8 +21,27 @@ export function VerseOfDay() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isLoadingVerse, setIsLoadingVerse] = useState(true)
+  const [remainingGens, setRemainingGens] = useState(3)
   
   const { addXP } = useUserProgress()
+
+  useEffect(() => {
+    // Check limits on mount
+    const today = new Date().toISOString().split('T')[0]
+    const storageKey = "biblia-viva-image-gen-limit"
+    const storedData = localStorage.getItem(storageKey)
+    
+    if (storedData) {
+      try {
+        const { count, date } = JSON.parse(storedData)
+        if (date === today) {
+          setRemainingGens(Math.max(0, 3 - count))
+        }
+      } catch (e) {
+        console.error("Error checking limits", e)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const loadDailyVerse = async () => {
@@ -139,13 +158,47 @@ export function VerseOfDay() {
   }
 
   const handleGenerateArt = async () => {
+    // Verificar límite diario
+    const today = new Date().toISOString().split('T')[0]
+    const storageKey = "biblia-viva-image-gen-limit"
+    const storedData = localStorage.getItem(storageKey)
+    
+    let currentCount = 0
+    
+    if (storedData) {
+      try {
+        const { count, date } = JSON.parse(storedData)
+        if (date === today) {
+          currentCount = count
+        }
+      } catch (e) {
+        console.error("Error parsing limit data", e)
+      }
+    }
+
+    if (currentCount >= 3) {
+      toast.error("Has alcanzado el límite diario de 3 imágenes.")
+      return
+    }
+
     try {
       setIsGeneratingImage(true)
       const { url } = await generateVerseImage(`${verse.texto} (${verse.libro} ${verse.capitulo}:${verse.versiculo})`)
       setGeneratedImage(url || null)
       addXP(15)
+      
+      // Actualizar contador
+      const newCount = currentCount + 1
+      localStorage.setItem(storageKey, JSON.stringify({
+        count: newCount,
+        date: today
+      }))
+      setRemainingGens(Math.max(0, 3 - newCount))
+      
+      toast.success(`Imagen generada. Te quedan ${3 - newCount} usos hoy.`)
     } catch (error) {
       console.error(error)
+      toast.error("No se pudo generar la imagen. Inténtalo de nuevo.")
     } finally {
       setIsGeneratingImage(false)
     }
@@ -235,14 +288,15 @@ export function VerseOfDay() {
               size="sm" 
               className="gap-2 gradient-primary border-0"
               onClick={handleGenerateArt}
-              disabled={isGeneratingImage}
+              disabled={isGeneratingImage || remainingGens === 0}
+              title={remainingGens === 0 ? "Límite diario alcanzado" : `${remainingGens} generaciones restantes hoy`}
             >
               {isGeneratingImage ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Sparkles className="w-4 h-4" />
               )}
-              {isGeneratingImage ? "Generando..." : "Generar Arte IA"}
+              {isGeneratingImage ? "Generando..." : remainingGens === 0 ? "Límite alcanzado" : "Generar Arte IA"}
             </Button>
           </div>
         </div>
