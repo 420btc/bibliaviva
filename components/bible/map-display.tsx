@@ -1,6 +1,6 @@
 "use client"
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect } from 'react'
@@ -43,10 +43,36 @@ export default function MapDisplay({ locations }: MapDisplayProps) {
             scrollWheelZoom={true} 
             style={{ height: "100%", width: "100%", borderRadius: "0.5rem" }}
         >
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <LayersControl position="topright">
+                <LayersControl.BaseLayer name="Mapa Estándar">
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                </LayersControl.BaseLayer>
+
+                <LayersControl.BaseLayer checked name="Satélite con Etiquetas">
+                    <LayerGroup>
+                        <TileLayer
+                            attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        />
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.carto.com/attributions">CARTO</a>'
+                            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png"
+                        />
+                    </LayerGroup>
+                </LayersControl.BaseLayer>
+
+                <LayersControl.Overlay checked name="Fronteras Históricas (Imperio Romano)">
+                    <TileLayer
+                        attribution='&copy; <a href="http://awmc.unc.edu/wordpress/">Ancient World Mapping Center</a>'
+                        url="https://api.awmc.unc.edu/iiif/2.0/api/awmc/tiles/{z}/{x}/{y}.png"
+                        opacity={0.6}
+                    />
+                </LayersControl.Overlay>
+            </LayersControl>
+
             {locations.map((loc, idx) => (
                 <Marker 
                     key={idx} 
