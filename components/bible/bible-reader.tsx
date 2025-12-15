@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import useSWR from "swr"
 import { bibleBooks, getAllBooksFlat, type BibleBookLocal } from "@/lib/bible-data"
-import { getChapter, searchBible, SUPPORTED_VERSIONS, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
+import { getChapter, searchBible, SUPPORTED_VERSIONS, BIBLE_EDITIONS, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
@@ -30,7 +30,8 @@ import {
   CheckCircle2,
   MapPin,
   Split,
-  Globe
+  Globe,
+  Library
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -88,6 +89,8 @@ export function BibleReader() {
   const [isComparing, setIsComparing] = useState(false)
   const [secondaryVersion, setSecondaryVersion] = useState("nvi")
   const [isMapOpen, setIsMapOpen] = useState(false)
+  const [currentEdition, setCurrentEdition] = useState<"CHRISTIAN" | "MESSIANIC">("CHRISTIAN")
+  const [primaryVersion, setPrimaryVersion] = useState("rv1960")
 
   // Efecto para cargar libro/capítulo desde URL o DB/LocalStorage
   useEffect(() => {
@@ -230,7 +233,7 @@ export function BibleReader() {
     data: chapterData,
     error,
     isLoading,
-  } = useSWR<ChapterResponse>([selectedBook.id, selectedChapter, "rv1960"], fetcher, {
+  } = useSWR<ChapterResponse>([selectedBook.id, selectedChapter, primaryVersion], fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   })
@@ -756,6 +759,40 @@ export function BibleReader() {
             <Search className="w-4 h-4" />
           </Button>
 
+          {/* Toggle de Edición (Cristiana / Mesiánica) */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" title="Cambiar Edición (Cristiana / Mesiánica)">
+                <Library className="w-4 h-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2">
+              <div className="space-y-1">
+                <h4 className="font-medium text-xs px-2 py-1.5 text-muted-foreground uppercase tracking-wider">Modo de Estudio</h4>
+                <Button 
+                  variant={currentEdition === "CHRISTIAN" ? "secondary" : "ghost"} 
+                  className="w-full justify-start text-sm"
+                  onClick={() => {
+                    setCurrentEdition("CHRISTIAN")
+                    setPrimaryVersion("rv1960")
+                  }}
+                >
+                  ✝️ Edición Cristiana
+                </Button>
+                <Button 
+                  variant={currentEdition === "MESSIANIC" ? "secondary" : "ghost"} 
+                  className="w-full justify-start text-sm"
+                  onClick={() => {
+                    setCurrentEdition("MESSIANIC")
+                    setPrimaryVersion("cjb")
+                  }}
+                >
+                  ✡️ Edición Mesiánica
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {/* New Feature Buttons */}
           <div className="flex items-center gap-1 border-l border-r border-border px-2 mx-1">
              <Button 
@@ -1022,11 +1059,21 @@ export function BibleReader() {
             <div className={cn("grid gap-8 pb-20", isComparing ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
               {/* Columna Principal */}
               <div className="space-y-1">
-                <div className="mb-8 text-center sticky top-0 bg-background/95 backdrop-blur py-4 z-10 border-b">
+                <div className="mb-8 text-center sticky top-0 bg-background/95 backdrop-blur py-4 z-10 border-b flex flex-col items-center gap-2">
                   <h1 className="text-2xl font-bold font-serif text-foreground mb-1">
                     {selectedBook.nombre} {selectedChapter}
                   </h1>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">Reina-Valera 1960</p>
+                  
+                  <Select value={primaryVersion} onValueChange={setPrimaryVersion}>
+                    <SelectTrigger className="w-[200px] h-8 text-xs uppercase tracking-widest border-none bg-transparent shadow-none hover:bg-muted/50 justify-center">
+                      <SelectValue placeholder="Seleccionar versión" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BIBLE_EDITIONS[currentEdition].map(v => (
+                        <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 {chapterData?.vers.map((verse) => {
@@ -1070,7 +1117,7 @@ export function BibleReader() {
                           <SelectValue placeholder="Seleccionar versión" />
                         </SelectTrigger>
                         <SelectContent>
-                          {SUPPORTED_VERSIONS.map(v => (
+                          {BIBLE_EDITIONS[currentEdition].map(v => (
                             <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                           ))}
                         </SelectContent>

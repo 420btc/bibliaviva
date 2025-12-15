@@ -112,12 +112,22 @@ interface BollsVerse {
   comment?: string
 }
 
-export const SUPPORTED_VERSIONS = [
-  { id: "rv1960", name: "Reina Valera 1960", apiCode: "RV1960" },
-  { id: "dhh", name: "Dios Habla Hoy", apiCode: "DHH" },
-  { id: "lbla", name: "La Biblia de las Américas", apiCode: "LBLA" },
-  { id: "nvi", name: "Nueva Versión Internacional", apiCode: "NVI" }
-]
+export const BIBLE_EDITIONS = {
+  CHRISTIAN: [
+    { id: "rv1960", name: "Reina Valera 1960", apiCode: "RV1960" },
+    { id: "rv2004", name: "Reina Valera Gómez (King James Español)", apiCode: "RV2004" },
+    { id: "lbla", name: "La Biblia de las Américas", apiCode: "LBLA" },
+    { id: "nvi", name: "Nueva Versión Internacional", apiCode: "NVI" }
+  ],
+  MESSIANIC: [
+    { id: "cjb", name: "Complete Jewish Bible (Inglés)", apiCode: "CJB" },
+    { id: "ntjud", name: "Nuevo Testamento Judío (Español)", apiCode: "NTJud" }, // Solo NT
+    { id: "sev", name: "Sagradas Escrituras (1569)", apiCode: "SEV" }, // Cercana a textos originales
+    { id: "btx3", name: "Biblia Textual 3ra Edición", apiCode: "BTX3" }
+  ]
+}
+
+export const SUPPORTED_VERSIONS = [...BIBLE_EDITIONS.CHRISTIAN, ...BIBLE_EDITIONS.MESSIANIC]
 
 // Obtener un capítulo completo (versión por defecto RV1960)
 export async function getChapter(bookName: string, chapter: number, version: string = "rv1960"): Promise<ChapterResponse> {
