@@ -49,12 +49,12 @@ const plans = [
 export function ReadingPlans() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Planes de Lectura</h2>
           <p className="text-muted-foreground">Estructura tu estudio y mantén la constancia.</p>
         </div>
-        <Button>
+        <Button className="w-full md:w-auto">
           <CalendarRange className="mr-2 h-4 w-4" />
           Crear Plan Personalizado
         </Button>

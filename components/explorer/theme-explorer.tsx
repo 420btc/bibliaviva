@@ -444,30 +444,32 @@ export function ThemeExplorer() {
 
       {/* Encabezado */}
       <div className="border-b border-border p-4">
-        <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 max-w-6xl mx-auto">
           <div>
             <h1 className="text-xl font-bold text-foreground">Explorador Temático</h1>
             <p className="text-sm text-muted-foreground">Descubre conexiones entre temas, personajes y pasajes</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Buscar tema..."
-                className="pl-10 w-48 bg-secondary border-0"
+                className="pl-10 w-full sm:w-48 bg-secondary border-0"
               />
             </div>
-            <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.min(z + 0.2, 2))}>
-              <ZoomIn className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}>
-              <ZoomOut className="w-4 h-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Maximize2 className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-2 justify-end">
+              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.min(z + 0.2, 2))}>
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setZoom((z) => Math.max(z - 0.2, 0.5))}>
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Maximize2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
