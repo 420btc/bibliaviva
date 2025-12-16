@@ -13,26 +13,8 @@ import { getCompletedChaptersAction } from "@/actions/progress"
 import { useAuth } from "@/components/auth-provider"
 import { bibleBooks, getAllBooksFlat } from "@/lib/bible-data"
 
-const quizQuestions = [
-  {
-    id: 1,
-    pregunta: "¿En qué libro de la Biblia encontramos la historia de Noé y el arca?",
-    opciones: ["Éxodo", "Génesis", "Levítico", "Números"],
-    respuestaCorrecta: 1,
-  },
-  {
-    id: 2,
-    pregunta: "¿Cuántos discípulos tuvo Jesús?",
-    opciones: ["10", "11", "12", "13"],
-    respuestaCorrecta: 2,
-  },
-  {
-    id: 3,
-    pregunta: "¿Quién escribió la mayoría de las epístolas del Nuevo Testamento?",
-    opciones: ["Pedro", "Juan", "Pablo", "Santiago"],
-    respuestaCorrecta: 2,
-  },
-]
+import { getQuizQuestionsAction, recordQuestionAnsweredAction } from "@/actions/quiz"
+import { Loader2 } from "lucide-react"
 
 export function JourneyPage() {
   const [activeQuiz, setActiveQuiz] = useState(false)
@@ -44,6 +26,10 @@ export function JourneyPage() {
   // Estado para historial de lecturas
   const [completedChapters, setCompletedChapters] = useState<any[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+
+  // Estado para quiz
+  const [quizQuestions, setQuizQuestions] = useState<any[]>([])
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false)
 
   const { progress: user, addXP } = useUserProgress()
   const { user: authUser } = useAuth()
@@ -68,8 +54,38 @@ export function JourneyPage() {
     loadHistory()
   }, [authUser])
 
+  // Cargar preguntas cuando se activa el quiz
+  useEffect(() => {
+    if (activeQuiz && authUser?.id) {
+      setIsLoadingQuestions(true)
+      getQuizQuestionsAction(authUser.id).then(res => {
+        if (res.success && res.questions && res.questions.length > 0) {
+          const mappedQuestions = res.questions.map((q: any) => ({
+            id: q.id,
+            pregunta: q.question,
+            opciones: q.options,
+            respuestaCorrecta: q.correctAnswer
+          }))
+          setQuizQuestions(mappedQuestions)
+        } else {
+           // Fallback si falla la carga o no hay preguntas
+           console.error("No se pudieron cargar las preguntas")
+        }
+        setIsLoadingQuestions(false)
+      })
+    }
+  }, [activeQuiz, authUser?.id])
+
   const handleAnswer = (index: number) => {
     setSelectedAnswer(index)
+    
+    // Registrar respuesta en DB
+    if (authUser?.id && quizQuestions[currentQuestion]) {
+        const q = quizQuestions[currentQuestion]
+        const isCorrect = index === q.respuestaCorrecta
+        recordQuestionAnsweredAction(authUser.id, q.id, isCorrect)
+    }
+
     setTimeout(() => {
       if (index === quizQuestions[currentQuestion].respuestaCorrecta) {
         setScore((s) => s + 1)
@@ -93,6 +109,7 @@ export function JourneyPage() {
     setScore(0)
     setSelectedAnswer(null)
     setShowResult(false)
+    setQuizQuestions([]) // Limpiar para recargar nuevas
   }
 
   return (
@@ -344,6 +361,11 @@ export function JourneyPage() {
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </Card>
+          ) : isLoadingQuestions ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+              <p className="text-muted-foreground">Cargando preguntas...</p>
+            </div>
           ) : showResult ? (
             <Card className="glass-card p-8 text-center max-w-lg mx-auto">
               <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-4">
@@ -358,7 +380,7 @@ export function JourneyPage() {
                 Intentar de Nuevo
               </Button>
             </Card>
-          ) : (
+          ) : quizQuestions.length > 0 && quizQuestions[currentQuestion] ? (
             <Card className="glass-card p-6 max-w-lg mx-auto">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm text-muted-foreground">
@@ -369,7 +391,7 @@ export function JourneyPage() {
               <Progress value={((currentQuestion + 1) / quizQuestions.length) * 100} className="h-2 mb-6" />
               <h3 className="text-lg font-semibold text-foreground mb-6">{quizQuestions[currentQuestion].pregunta}</h3>
               <div className="space-y-3">
-                {quizQuestions[currentQuestion].opciones.map((opcion, index) => {
+                {quizQuestions[currentQuestion].opciones.map((opcion: string, index: number) => {
                   const isSelected = selectedAnswer === index
                   const isCorrect = index === quizQuestions[currentQuestion].respuestaCorrecta
                   const showAnswer = selectedAnswer !== null
@@ -399,6 +421,11 @@ export function JourneyPage() {
                 })}
               </div>
             </Card>
+          ) : (
+             <div className="text-center py-12">
+               <p className="text-muted-foreground mb-4">No hay preguntas disponibles por ahora o hubo un error al cargar.</p>
+               <Button onClick={resetQuiz} variant="outline">Volver</Button>
+            </div>
           )}
         </TabsContent>
 

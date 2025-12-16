@@ -116,6 +116,33 @@ export async function migrate() {
     `;
     console.log('Created prayer_interactions table');
 
+    // Table: quiz_questions
+    await sql`
+      CREATE TABLE IF NOT EXISTS quiz_questions (
+        id TEXT PRIMARY KEY,
+        question TEXT NOT NULL,
+        options TEXT NOT NULL, -- JSON string array
+        correct_answer INTEGER NOT NULL,
+        explanation TEXT,
+        difficulty TEXT DEFAULT 'medium',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    console.log('Created quiz_questions table');
+
+    // Table: user_answered_questions
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_answered_questions (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        question_id TEXT NOT NULL,
+        is_correct BOOLEAN DEFAULT TRUE,
+        answered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, question_id)
+      );
+    `;
+    console.log('Created user_answered_questions table');
+
     // Table: chat_messages
     await sql`
       CREATE TABLE IF NOT EXISTS chat_messages (
