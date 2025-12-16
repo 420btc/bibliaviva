@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import useSWR from "swr"
 import { bibleBooks, getAllBooksFlat, type BibleBookLocal } from "@/lib/bible-data"
 import { getChapter, searchBible, SUPPORTED_VERSIONS, BIBLE_EDITIONS, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
@@ -95,6 +95,8 @@ export function BibleReader() {
   const [selectedBook, setSelectedBook] = useState<BibleBookLocal>(bibleBooks.antiguoTestamento[0]) // Génesis por defecto
   const [selectedChapter, setSelectedChapter] = useState(1)
   const [selectedVerses, setSelectedVerses] = useState<number[]>([])
+  const readingScrollRef = useRef<HTMLDivElement | null>(null)
+  const [showReadingHeader, setShowReadingHeader] = useState(true)
   
   // New States for Features
   const [isComparing, setIsComparing] = useState(false)
@@ -178,6 +180,16 @@ export function BibleReader() {
     }
     loadInitialState()
   }, [searchParams, user])
+
+  const handleReadingScroll = useCallback(() => {
+    const el = readingScrollRef.current
+    if (!el) return
+
+    const y = el.scrollTop
+    // Oculta con cualquier scroll; reaparece solo al volver arriba del todo
+    const nextShow = y === 0
+    setShowReadingHeader((prev) => (prev === nextShow ? prev : nextShow))
+  }, [])
 
   // Guardar posición al cambiar
   useEffect(() => {
@@ -453,6 +465,10 @@ export function BibleReader() {
 
   // Navegación entre capítulos
   const nextChapter = () => {
+    if (viewMode === "scroll") {
+      if (readingScrollRef.current) readingScrollRef.current.scrollTop = 0
+      setShowReadingHeader(true)
+    }
     if (selectedChapter < selectedBook.capitulos) {
       setSelectedChapter(prev => prev + 1)
     } else {
@@ -464,6 +480,10 @@ export function BibleReader() {
   }
 
   const prevChapter = () => {
+    if (viewMode === "scroll") {
+      if (readingScrollRef.current) readingScrollRef.current.scrollTop = 0
+      setShowReadingHeader(true)
+    }
     if (selectedChapter > 1) {
       setSelectedChapter(prev => prev - 1)
     }
@@ -1332,7 +1352,7 @@ export function BibleReader() {
         <div className={cn(
           "flex-1 overflow-y-auto pt-0 px-4 pb-4 md:pt-0 md:px-8 md:pb-8 w-full",
           isComparing ? "max-w-full" : "max-w-4xl mx-auto"
-        )}>
+        )} ref={readingScrollRef} onScroll={handleReadingScroll}>
           {isLoading ? (
             <div className="space-y-4 animate-pulse">
               {[...Array(10)].map((_, i) => (
@@ -1353,7 +1373,15 @@ export function BibleReader() {
             <div className={cn("grid gap-8 pb-20", isComparing ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
               {/* Columna Principal */}
               <div className="space-y-1">
-                <div className="mb-8 text-center sticky top-0 bg-background/95 backdrop-blur py-4 z-10 border-b flex flex-col items-center gap-2">
+                <div
+                  className={cn(
+                    "text-center sticky top-0 bg-background/95 backdrop-blur z-10 flex flex-col items-center gap-2 overflow-hidden transition-all duration-200",
+                    showReadingHeader
+                      ? "mb-8 py-4 max-h-40 opacity-100 translate-y-0 border-b"
+                      : "mb-0 py-0 max-h-0 opacity-0 -translate-y-2 border-b border-transparent"
+                  )}
+                  aria-hidden={!showReadingHeader}
+                >
                   <h1 className="text-2xl font-bold font-serif text-foreground mb-1">
                     {selectedBook.nombre} {selectedChapter}
                   </h1>
@@ -1405,7 +1433,15 @@ export function BibleReader() {
               {/* Columna Secundaria (Solo visible en Comparación) */}
               {isComparing && (
                 <div className="space-y-1 border-l pl-4 md:pl-8 border-dashed border-border/50">
-                   <div className="mb-8 text-center sticky top-0 bg-background/95 backdrop-blur py-2 z-10 border-b flex flex-col items-center gap-2">
+                   <div
+                      className={cn(
+                        "text-center sticky top-0 bg-background/95 backdrop-blur z-10 flex flex-col items-center gap-2 overflow-hidden transition-all duration-200",
+                        showReadingHeader
+                          ? "mb-8 py-2 max-h-40 opacity-100 translate-y-0 border-b"
+                          : "mb-0 py-0 max-h-0 opacity-0 -translate-y-2 border-b border-transparent"
+                      )}
+                      aria-hidden={!showReadingHeader}
+                    >
                       <Select value={secondaryVersion} onValueChange={setSecondaryVersion}>
                         <SelectTrigger className="w-[200px] h-8 text-xs">
                           <SelectValue placeholder="Seleccionar versión" />
