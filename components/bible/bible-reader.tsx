@@ -759,7 +759,7 @@ export function BibleReader() {
       {isSearchOpen && renderSearchDialog()}
       
       {/* Header de navegación */}
-      <header className="border-b border-border p-4 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border px-4 pt-4 pb-1 md:p-4 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowBookSelector(true)} className="gap-2">
             <Book className="w-4 h-4" />
@@ -912,7 +912,7 @@ export function BibleReader() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
            {/* Botón de Audio y Configuración */}
            <div className="flex items-center bg-muted/50 rounded-full p-1 border border-border">
              <Popover>
@@ -1096,12 +1096,114 @@ export function BibleReader() {
         </div>
       </header>
 
+      {/* Audio Bar para Móvil */}
+      <div className="md:hidden border-b border-border bg-card/30 backdrop-blur-sm px-4 py-1 flex items-center justify-between">
+         <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Audio</span>
+            <div className="flex items-center bg-muted/50 rounded-full p-0.5 border border-border">
+             <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" title="Configurar voz">
+                  <Settings2 className="w-3.5 h-3.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-60 p-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Voz de lectura</h4>
+                  <p className="text-sm text-muted-foreground">Selecciona el tono de voz.</p>
+                  <Select value={currentVoice} onValueChange={(v: any) => {
+                    stopAudio()
+                    setCurrentVoice(v)
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una voz" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
+                      <SelectItem value="echo">Echo (Grave)</SelectItem>
+                      <SelectItem value="fable">Fable (Británico)</SelectItem>
+                      <SelectItem value="onyx">Onyx (Profundo)</SelectItem>
+                      <SelectItem value="nova">Nova (Femenino)</SelectItem>
+                      <SelectItem value="shimmer">Shimmer (Claro)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+             </Popover>
+
+             <Button
+               variant="ghost"
+               size="icon"
+               className={cn("h-8 w-8 rounded-full transition-all", isPlaying && "text-primary bg-primary/10")}
+               onClick={togglePlayPause}
+               disabled={isLoadingAudio}
+               title={isPlaying ? "Pausar" : "Escuchar Capítulo"}
+             >
+               {isLoadingAudio ? (
+                 <Loader2 className="w-4 h-4 animate-spin" />
+               ) : isPlaying ? (
+                 <Pause className="w-4 h-4" />
+               ) : (
+                 <Play className="w-4 h-4 ml-0.5" />
+               )}
+             </Button>
+
+            {/* Botón X para cerrar/cancelar audio */}
+             {(isPlaying || playingVerse !== null) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors ml-1"
+                  onClick={stopAudio}
+                  title="Detener audio y limpiar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+             )}
+           </div>
+         </div>
+
+         {/* Acciones de selección en móvil */}
+         <AnimatePresence>
+            {selectedVerses.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full border border-border px-2 py-0.5"
+              >
+                {/* Botón para guardar Bookmark */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={saveBookmark}
+                  className="w-7 h-7 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                  title="Guardar en Favoritos"
+                >
+                  <Bookmark className="w-3.5 h-3.5" />
+                </Button>
+
+                {/* Botón para marcar como leído */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={markAsRead}
+                  className="w-7 h-7 rounded-full hover:bg-green-500/10 hover:text-green-500 transition-colors"
+                  title="Marcar como leído"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </Button>
+              </motion.div>
+            )}
+           </AnimatePresence>
+      </div>
+
       {/* Área de lectura */}
       {viewMode === "book" && !isComparing && !isLoading && !error ? (
         <BookView />
       ) : (
         <div className={cn(
-          "flex-1 overflow-y-auto p-4 md:p-8 w-full",
+          "flex-1 overflow-y-auto pt-0 px-4 pb-4 md:p-8 w-full",
           isComparing ? "max-w-full" : "max-w-4xl mx-auto"
         )}>
           {isLoading ? (
