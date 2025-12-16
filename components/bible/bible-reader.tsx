@@ -45,6 +45,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/components/auth-provider"
 import { saveBookmarkAction } from "@/actions/bookmarks"
 import { saveProgressAction, getProgressAction, markChapterAsReadAction } from "@/actions/progress"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Select,
   SelectContent,
@@ -92,11 +93,17 @@ export function BibleReader() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [selectedBook, setSelectedBook] = useState<BibleBookLocal>(bibleBooks.antiguoTestamento[0]) // Génesis por defecto
   const [selectedChapter, setSelectedChapter] = useState(1)
   const [selectedVerses, setSelectedVerses] = useState<number[]>([])
+  const [viewMode, setViewMode] = useState<"scroll" | "book">("scroll")
   const readingScrollRef = useRef<HTMLDivElement | null>(null)
   const [showReadingHeader, setShowReadingHeader] = useState(true)
+  const [showTopNav, setShowTopNav] = useState(true)
+  const [isZenReading, setIsZenReading] = useState(false)
+  const isZenReadingRef = useRef(false)
+  const hideTopNavTimeoutRef = useRef<number | null>(null)
   
   // New States for Features
   const [isComparing, setIsComparing] = useState(false)
@@ -181,15 +188,95 @@ export function BibleReader() {
     loadInitialState()
   }, [searchParams, user])
 
+  useEffect(() => {
+    isZenReadingRef.current = isZenReading
+  }, [isZenReading])
+
+  const setZenRootClass = useCallback((enabled: boolean) => {
+    const root = document.documentElement
+    if (enabled) {
+      root.classList.add("zen-reading")
+    } else {
+      root.classList.remove("zen-reading")
+      root.classList.remove("zen-sidebar-peek")
+    }
+  }, [])
+
+  const setZenSidebarPeekClass = useCallback((enabled: boolean) => {
+    const root = document.documentElement
+    if (enabled) root.classList.add("zen-sidebar-peek")
+    else root.classList.remove("zen-sidebar-peek")
+  }, [])
+
   const handleReadingScroll = useCallback(() => {
     const el = readingScrollRef.current
     if (!el) return
 
     const y = el.scrollTop
-    // Oculta con cualquier scroll; reaparece solo al volver arriba del todo
-    const nextShow = y === 0
-    setShowReadingHeader((prev) => (prev === nextShow ? prev : nextShow))
-  }, [])
+    const atTop = y <= 0
+    const isScrollMode = viewMode === "scroll"
+    const nextZen = !isMobile && isScrollMode && y > 1
+
+    setIsZenReading((prev) => (prev === nextZen ? prev : nextZen))
+    setZenRootClass(nextZen)
+    if (!nextZen) setZenSidebarPeekClass(false)
+
+    if (atTop) {
+      setShowReadingHeader(true)
+      setShowTopNav(true)
+      if (hideTopNavTimeoutRef.current) {
+        window.clearTimeout(hideTopNavTimeoutRef.current)
+        hideTopNavTimeoutRef.current = null
+      }
+      return
+    }
+
+    setShowReadingHeader(false)
+    if (nextZen) setShowTopNav(false)
+  }, [isMobile, setZenRootClass, setZenSidebarPeekClass, viewMode])
+
+  useEffect(() => {
+    if (!isZenReading || isMobile) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = e.clientX
+      setZenSidebarPeekClass(x <= 24)
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      setZenSidebarPeekClass(false)
+    }
+  }, [isMobile, isZenReading, setZenSidebarPeekClass])
+
+  useEffect(() => {
+    return () => {
+      setZenRootClass(false)
+      if (hideTopNavTimeoutRef.current) {
+        window.clearTimeout(hideTopNavTimeoutRef.current)
+        hideTopNavTimeoutRef.current = null
+      }
+    }
+  }, [setZenRootClass])
+
+  const handleReadingTextPointerDownCapture = useCallback(() => {
+    if (!isZenReadingRef.current) return
+
+    setZenSidebarPeekClass(false)
+    setShowTopNav(true)
+
+    if (hideTopNavTimeoutRef.current) {
+      window.clearTimeout(hideTopNavTimeoutRef.current)
+      hideTopNavTimeoutRef.current = null
+    }
+
+    hideTopNavTimeoutRef.current = window.setTimeout(() => {
+      if (!isZenReadingRef.current) return
+      const y = readingScrollRef.current?.scrollTop ?? 0
+      if (y > 0) setShowTopNav(false)
+    }, 2000)
+  }, [setZenSidebarPeekClass])
 
   // Guardar posición al cambiar
   useEffect(() => {
@@ -215,7 +302,6 @@ export function BibleReader() {
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
   const [showBookSelector, setShowBookSelector] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-  const [viewMode, setViewMode] = useState<"scroll" | "book">("scroll")
   
   // Search states
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -784,7 +870,7 @@ export function BibleReader() {
       <div className="flex-1 overflow-hidden p-0 md:p-0 w-full h-full bg-[#fdfbf7] dark:bg-[#000000]">
         <div className="h-full w-full mx-auto bg-card rounded-none shadow-none border-0 flex flex-col md:flex-row overflow-hidden relative">
           {/* Sombra central del libro */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-12 -ml-6 bg-gradient-to-r from-transparent via-black/5 to-transparent z-10 hidden md:block pointer-events-none" />
+          <div className="absolute left-1/2 top-0 bottom-0 w-12 -ml-6 bg-linear-to-r from-transparent via-black/5 to-transparent z-10 hidden md:block pointer-events-none" />
           
           {/* Página Izquierda */}
           <div className="flex-1 flex flex-col border-r border-border/10">
@@ -896,7 +982,15 @@ export function BibleReader() {
       {isSearchOpen && renderSearchDialog()}
       
       {/* Header de navegación */}
-      <header className="border-b border-border px-4 py-2 md:py-3 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-30 shrink-0">
+      <header
+        className={cn(
+          "border-b border-border px-4 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-30 shrink-0 overflow-hidden transition-all duration-200",
+          showTopNav
+            ? "py-2 md:py-3 max-h-24 opacity-100"
+            : "md:py-0 md:max-h-0 md:opacity-0 md:border-transparent md:pointer-events-none"
+        )}
+        aria-hidden={!showTopNav}
+      >
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowBookSelector(true)} className="gap-2">
             <Book className="w-4 h-4" />
@@ -1034,7 +1128,7 @@ export function BibleReader() {
              </Button>
           </div>
 
-          <div className="flex items-center border rounded-md overflow-hidden">
+          <div className="hidden md:flex items-center border rounded-md overflow-hidden">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -1044,7 +1138,7 @@ export function BibleReader() {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <div className="px-3 text-sm font-medium border-x h-8 flex items-center min-w-[3rem] justify-center">
+            <div className="px-3 text-sm font-medium border-x h-8 flex items-center min-w-12 justify-center">
               {selectedChapter}
             </div>
             <Button 
@@ -1244,7 +1338,15 @@ export function BibleReader() {
       </header>
 
       {/* Audio Bar para Móvil */}
-      <div className="md:hidden border-b border-border bg-card/30 backdrop-blur-sm px-4 py-1 flex items-center justify-between">
+      <div
+        className={cn(
+          "md:hidden border-b border-border bg-card/30 backdrop-blur-sm px-4 flex items-center justify-between overflow-hidden transition-all duration-200",
+          showTopNav
+            ? "py-1 max-h-20 opacity-100"
+            : "py-0 max-h-0 opacity-0 border-transparent pointer-events-none"
+        )}
+        aria-hidden={!showTopNav}
+      >
          <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Audio</span>
             <div className="flex items-center bg-muted/50 rounded-full p-0.5 border border-border">
@@ -1310,6 +1412,32 @@ export function BibleReader() {
            </div>
          </div>
 
+         <div className="flex items-center border rounded-md overflow-hidden bg-muted/50 border-border">
+           <Button
+             variant="ghost"
+             size="icon"
+             className="h-8 w-8 rounded-none"
+             onClick={prevChapter}
+             disabled={selectedChapter <= 1}
+             title="Anterior"
+           >
+             <ChevronLeft className="w-4 h-4" />
+           </Button>
+           <div className="px-3 text-sm font-medium border-x h-8 flex items-center min-w-12 justify-center">
+             {selectedChapter}
+           </div>
+           <Button
+             variant="ghost"
+             size="icon"
+             className="h-8 w-8 rounded-none"
+             onClick={nextChapter}
+             disabled={selectedChapter >= selectedBook.capitulos}
+             title="Siguiente"
+           >
+             <ChevronRight className="w-4 h-4" />
+           </Button>
+         </div>
+
          {/* Acciones de selección en móvil */}
          <AnimatePresence>
             {selectedVerses.length > 0 && (
@@ -1352,7 +1480,7 @@ export function BibleReader() {
         <div className={cn(
           "flex-1 overflow-y-auto pt-0 px-4 pb-4 md:pt-0 md:px-8 md:pb-8 w-full",
           isComparing ? "max-w-full" : "max-w-4xl mx-auto"
-        )} ref={readingScrollRef} onScroll={handleReadingScroll}>
+        )} ref={readingScrollRef} onScroll={handleReadingScroll} onPointerDownCapture={handleReadingTextPointerDownCapture}>
           {isLoading ? (
             <div className="space-y-4 animate-pulse">
               {[...Array(10)].map((_, i) => (
@@ -1416,7 +1544,7 @@ export function BibleReader() {
                         highlightClass
                       )}
                     >
-                      <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
+                      <span className="absolute -left-6 top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
                         {verse.number}
                       </span>
                       <p 
@@ -1469,7 +1597,7 @@ export function BibleReader() {
                         key={`sec-${verse.id || verse.number}`}
                         className="relative group px-2 py-1 rounded hover:bg-muted/30"
                       >
-                        <span className="absolute left-[-1.5rem] top-1.5 text-xs text-muted-foreground opacity-30 font-medium w-4 text-right select-none">
+                        <span className="absolute -left-6 top-1.5 text-xs text-muted-foreground opacity-30 font-medium w-4 text-right select-none">
                           {verse.number}
                         </span>
                         <p 

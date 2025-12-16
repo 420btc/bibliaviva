@@ -49,7 +49,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden lg:flex flex-col w-72 border-r border-border bg-card/30 backdrop-blur-md h-screen sticky top-0">
+      <aside className="hidden lg:flex flex-col w-72 border-r border-border bg-card/30 backdrop-blur-md h-screen sticky top-0 lg:in-[.zen-reading]:hidden lg:in-[.zen-reading.zen-sidebar-peek]:flex">
         <div className="flex flex-col h-full">
           <div className="p-6 pb-2">
             <div className="flex items-center gap-4 mb-8">
