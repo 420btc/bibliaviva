@@ -378,15 +378,17 @@ export function JourneyPage() {
                     <Button
                       key={index}
                       variant="outline"
-                      className={`w-full justify-start text-left h-auto py-3 ${
+                      className={`w-full justify-start text-left h-auto py-3 transition-all duration-200 ${
                         showAnswer && isCorrect
-                          ? "border-emerald-500 bg-emerald-500/10 text-foreground"
+                          ? "!border-green-500 !bg-green-100 dark:!bg-green-900/30 !text-green-700 dark:!text-green-400 opacity-100"
                           : showAnswer && isSelected && !isCorrect
-                            ? "border-destructive bg-destructive/10 text-foreground"
-                            : ""
+                            ? "!border-red-500 !bg-red-100 dark:!bg-red-900/30 !text-red-700 dark:!text-red-400 opacity-100"
+                            : showAnswer 
+                              ? "opacity-50" 
+                              : ""
                       }`}
                       onClick={() => !showAnswer && handleAnswer(index)}
-                      disabled={showAnswer}
+                      disabled={false}
                     >
                       <span className="mr-3 w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-sm">
                         {String.fromCharCode(65 + index)}

@@ -107,9 +107,9 @@ export function DailyQuizModal({ open, onOpenChange }: DailyQuizModalProps) {
                     
                     if (isAnswered) {
                       if (index === currentQuestion.correctAnswer) {
-                        className += " border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                        className += " !border-green-500 !bg-green-100 dark:!bg-green-900/30 !text-green-700 dark:!text-green-400 opacity-100"
                       } else if (index === selectedAnswer) {
-                        className += " border-red-500 bg-red-500/10 text-red-700 dark:text-red-400 hover:bg-red-500/20"
+                        className += " !border-red-500 !bg-red-100 dark:!bg-red-900/30 !text-red-700 dark:!text-red-400 opacity-100"
                       } else {
                         className += " opacity-50"
                       }
@@ -120,8 +120,8 @@ export function DailyQuizModal({ open, onOpenChange }: DailyQuizModalProps) {
                         key={index}
                         variant={variant as any}
                         className={className}
-                        onClick={() => handleAnswer(index)}
-                        disabled={isAnswered}
+                        onClick={() => !isAnswered && handleAnswer(index)}
+                        disabled={false}
                       >
                         <div className="flex items-center w-full">
                           <span className="mr-3 flex h-6 w-6 items-center justify-center rounded-full border text-xs">
@@ -129,7 +129,7 @@ export function DailyQuizModal({ open, onOpenChange }: DailyQuizModalProps) {
                           </span>
                           {option}
                           {isAnswered && index === currentQuestion.correctAnswer && (
-                            <CheckCircle2 className="ml-auto h-4 w-4 text-emerald-500" />
+                            <CheckCircle2 className="ml-auto h-4 w-4 text-green-500" />
                           )}
                           {isAnswered && index === selectedAnswer && index !== currentQuestion.correctAnswer && (
                             <XCircle className="ml-auto h-4 w-4 text-red-500" />

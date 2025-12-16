@@ -32,7 +32,8 @@ import {
   Split,
   Globe,
   Library,
-  BookOpen
+  BookOpen,
+  FileDown
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
@@ -470,6 +471,106 @@ export function BibleReader() {
     stopAudio()
   }
 
+  // Exportar a PDF
+  const exportToPDF = async () => {
+    if (!chapterData) return
+    
+    try {
+      const jsPDFModule = await import('jspdf')
+      const jsPDF = jsPDFModule.default
+      const doc = new jsPDF()
+      
+      // Configuración de fuente y márgenes
+      const margin = 20
+      const pageWidth = doc.internal.pageSize.width
+      const contentWidth = pageWidth - (margin * 2)
+      let yPosition = margin
+      
+      // Título
+      doc.setFontSize(22)
+      doc.setFont("helvetica", "bold")
+      doc.text(`${selectedBook.nombre} ${selectedChapter}`, margin, yPosition)
+      yPosition += 10
+      
+      // Versión
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(100)
+      const versionName = BIBLE_EDITIONS[currentEdition].find(v => v.id === primaryVersion)?.name || primaryVersion
+      doc.text(`Versión: ${versionName}`, margin, yPosition)
+      doc.setTextColor(0)
+      yPosition += 15
+      
+      // Contenido
+      doc.setFontSize(12)
+      const lineHeight = 7
+      
+      chapterData.vers.forEach((verse) => {
+          const verseNumber = `${verse.number}. `
+          const verseText = verse.verse
+          
+          // Calcular líneas necesarias
+          doc.setFont("helvetica", "bold")
+          const numberWidth = doc.getTextWidth(verseNumber)
+          
+          doc.setFont("helvetica", "normal")
+          const textLines = doc.splitTextToSize(verseText, contentWidth - numberWidth)
+          
+          // Verificar si cabe todo el versículo (o al menos la primera línea)
+          if (yPosition + (textLines.length * lineHeight) > doc.internal.pageSize.height - margin) {
+             // Si no cabe y es largo, o si estamos muy abajo, nueva página
+             if (yPosition > doc.internal.pageSize.height - margin - 20) {
+                 doc.addPage()
+                 yPosition = margin
+             }
+          }
+          
+          // Imprimir número
+          doc.setFont("helvetica", "bold")
+          doc.text(verseNumber, margin, yPosition)
+          
+          // Imprimir texto
+          doc.setFont("helvetica", "normal")
+          if (textLines.length > 0) {
+              doc.text(textLines[0], margin + numberWidth, yPosition)
+              
+              for (let i = 1; i < textLines.length; i++) {
+                  yPosition += lineHeight
+                  if (yPosition > doc.internal.pageSize.height - margin) {
+                      doc.addPage()
+                      yPosition = margin
+                  }
+                  doc.text(textLines[i], margin + numberWidth, yPosition)
+              }
+          }
+          
+          yPosition += lineHeight + 4 // Espacio extra entre versículos
+          
+          // Check for page break after verse
+          if (yPosition > doc.internal.pageSize.height - margin) {
+              doc.addPage()
+              yPosition = margin
+          }
+      })
+      
+      // Pie de página con branding
+      const pageCount = (doc.internal as any).getNumberOfPages ? (doc.internal as any).getNumberOfPages() : doc.internal.pages.length - 1
+      for(let i = 1; i <= pageCount; i++) {
+          doc.setPage(i)
+          doc.setFontSize(8)
+          doc.setTextColor(150)
+          doc.text(`Página ${i} de ${pageCount} - Generado por Biblia Viva`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' })
+      }
+      
+      doc.save(`Biblia_Viva_${selectedBook.nombre}_${selectedChapter}.pdf`)
+      toast.success("PDF descargado correctamente")
+      completeChallenge('compartir', 20) // Bonus por usar herramientas
+    } catch (error) {
+      console.error("Error generating PDF", error)
+      toast.error("Error al generar el PDF")
+    }
+  }
+
   // Búsqueda de texto
   const handleSearch = async () => {
     if (!searchQueryText.trim()) return
@@ -885,6 +986,16 @@ export function BibleReader() {
                   </div>
                 </DialogContent>
               </Dialog>
+
+             <Button
+               variant="ghost"
+               size="icon"
+               className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+               onClick={exportToPDF}
+               title="Descargar PDF"
+             >
+               <FileDown className="w-4 h-4" />
+             </Button>
           </div>
 
           <div className="flex items-center border rounded-md overflow-hidden">

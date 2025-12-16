@@ -42,7 +42,7 @@ export function DailyChallenges() {
           >
             <div className="flex items-center gap-3">
               {desafio.completado ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
               ) : (
                 <Circle className="w-5 h-5 text-muted-foreground" />
               )}
