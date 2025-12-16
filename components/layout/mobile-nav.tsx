@@ -33,7 +33,7 @@ const allNavItems = [
 export function MobileNav() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { progress } = useUserProgress()
   const [isBibleGlowing, setIsBibleGlowing] = useState(true)
   const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -164,6 +164,30 @@ export function MobileNav() {
                   </Link>
                 )
               })}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-border">
+              {user ? (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-3 text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                  onClick={() => {
+                    setOpen(false)
+                    logout()
+                  }}
+                >
+                  Cerrar sesión
+                </Button>
+              ) : (
+                <Link href="/login" onClick={() => setOpen(false)}>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3"
+                  >
+                    Iniciar sesión
+                  </Button>
+                </Link>
+              )}
             </div>
           </SheetContent>
         </Sheet>
