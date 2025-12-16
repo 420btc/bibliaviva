@@ -1524,63 +1524,64 @@ export function BibleReader() {
                 <div className="h-10" />
               )}
               <div className={cn("grid gap-8 pb-20", isComparing ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
-              {/* Columna Principal */}
-              <div className="space-y-1">
-                <div
-                  className={cn(
-                    "text-center sticky top-0 bg-background/95 backdrop-blur z-10 flex flex-col items-center gap-2 overflow-hidden transition-all duration-200",
-                    showReadingHeader
-                      ? "mb-8 py-4 max-h-40 opacity-100 translate-y-0 border-b"
-                      : "mb-0 py-0 max-h-0 opacity-0 -translate-y-2 border-b border-transparent"
-                  )}
-                  aria-hidden={!showReadingHeader}
-                >
-                  <h1 className="text-2xl font-bold font-serif text-foreground mb-1">
-                    {selectedBook.nombre} {selectedChapter}
-                  </h1>
+                {/* Columna Principal */}
+                <div className="space-y-1">
+                  <div
+                    className={cn(
+                      "text-center sticky top-0 bg-background/95 backdrop-blur z-10 flex flex-col items-center gap-2 overflow-hidden transition-all duration-200",
+                      showReadingHeader
+                        ? "mb-8 py-4 max-h-40 opacity-100 translate-y-0 border-b"
+                        : "mb-0 py-0 max-h-0 opacity-0 -translate-y-2 border-b border-transparent"
+                    )}
+                    aria-hidden={!showReadingHeader}
+                  >
+                    <h1 className="text-2xl font-bold font-serif text-foreground mb-1">
+                      {selectedBook.nombre} {selectedChapter}
+                    </h1>
                   
-                  <Select value={primaryVersion} onValueChange={setPrimaryVersion}>
-                    <SelectTrigger className="w-[200px] h-8 text-xs uppercase tracking-widest border-none bg-transparent shadow-none hover:bg-muted/50 justify-center">
-                      <SelectValue placeholder="Seleccionar versión" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BIBLE_EDITIONS[currentEdition].map(v => (
-                        <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <Select value={primaryVersion} onValueChange={setPrimaryVersion}>
+                      <SelectTrigger className="w-[200px] h-8 text-xs uppercase tracking-widest border-none bg-transparent shadow-none hover:bg-muted/50 justify-center">
+                        <SelectValue placeholder="Seleccionar versión" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BIBLE_EDITIONS[currentEdition].map(v => (
+                          <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 
-                {chapterData?.vers.map((verse) => {
-                  const verseNum = parseInt(verse.number)
-                  const isSelected = selectedVerses.includes(verseNum)
-                  const isPlayingVerse = playingVerse === verseNum
-                  const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
-                  
-                  return (
-                    <div 
-                      id={`verse-${verseNum}`}
-                      key={verse.id || verse.number}
-                      onClick={() => toggleVerseSelection(verseNum)}
-                      className={cn(
-                        "relative group px-2 py-1 rounded transition-all duration-300 cursor-pointer hover:bg-muted/50",
-                        isSelected && "bg-primary/10",
-                        isPlayingVerse && "bg-primary/20 shadow-sm ring-1 ring-primary/30",
-                        highlightClass
-                      )}
-                    >
-                      <span className="absolute -left-6 top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
-                        {verse.number}
-                      </span>
-                      <p 
-                        className="leading-relaxed font-serif text-foreground"
-                        style={{ fontSize: `${fontSize}px` }}
+                  {chapterData?.vers.map((verse) => {
+                    const verseNum = parseInt(verse.number)
+                    const isSelected = selectedVerses.includes(verseNum)
+                    const isPlayingVerse = playingVerse === verseNum
+                    const highlightClass = highlights[`${selectedBook.id}-${selectedChapter}`]?.[verseNum] || ""
+                    
+                    return (
+                      <div 
+                        id={`verse-${verseNum}`}
+                        key={verse.id || verse.number}
+                        onClick={() => toggleVerseSelection(verseNum)}
+                        className={cn(
+                          "relative group px-2 py-1 rounded transition-all duration-300 cursor-pointer hover:bg-muted/50",
+                          isSelected && "bg-primary/10",
+                          isPlayingVerse && "bg-primary/20 shadow-sm ring-1 ring-primary/30",
+                          highlightClass
+                        )}
                       >
-                        {verse.verse}
-                      </p>
-                    </div>
-                  )
-                })}
+                        <span className="absolute -left-6 top-1.5 text-xs text-muted-foreground opacity-50 font-medium w-4 text-right select-none group-hover:opacity-100">
+                          {verse.number}
+                        </span>
+                        <p 
+                          className="leading-relaxed font-serif text-foreground"
+                          style={{ fontSize: `${fontSize}px` }}
+                        >
+                          {verse.verse}
+                        </p>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Columna Secundaria (Solo visible en Comparación) */}
@@ -1666,7 +1667,6 @@ export function BibleReader() {
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
-              </div>
               </div>
             </>
           )}
