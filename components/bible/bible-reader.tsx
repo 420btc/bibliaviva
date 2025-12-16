@@ -1330,7 +1330,7 @@ export function BibleReader() {
         <BookView />
       ) : (
         <div className={cn(
-          "flex-1 overflow-y-auto pt-0 px-4 pb-4 md:p-8 w-full",
+          "flex-1 overflow-y-auto pt-0 px-4 pb-4 md:pt-0 md:px-8 md:pb-8 w-full",
           isComparing ? "max-w-full" : "max-w-4xl mx-auto"
         )}>
           {isLoading ? (
