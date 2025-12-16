@@ -3,15 +3,18 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Book, Home, MessageCircle, Menu, CalendarRange, Heart, StickyNote, Network, Trophy, Users } from "lucide-react"
+import { Book, Home, MessageCircle, Menu, CalendarRange, Heart, StickyNote, Network, Trophy, Users, Crown } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { Progress } from "@/components/ui/progress"
+import { useState, useEffect, useRef } from "react"
+import { useAuth } from "@/components/auth-provider"
+import { useUserProgress } from "@/hooks/use-user-progress"
 
 const mainNavItems = [
   { href: "/", icon: Home, label: "Inicio" },
-  { href: "/biblia", icon: Book, label: "Biblia" },
   { href: "/chat", icon: MessageCircle, label: "Chat" },
+  { href: "/biblia", icon: Book, label: "Biblia" },
   { href: "/planes", icon: CalendarRange, label: "Planes" },
 ]
 
@@ -30,23 +33,71 @@ const allNavItems = [
 export function MobileNav() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { user } = useAuth()
+  const { progress } = useUserProgress()
+  const [isBibleGlowing, setIsBibleGlowing] = useState(true)
+  const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Calcular porcentaje para el siguiente nivel
+  const progressPercent = (progress.xp / progress.xpParaSiguienteNivel) * 100
+
+  useEffect(() => {
+    // Resetear el brillo siempre que cambie la ruta o al montar
+    setIsBibleGlowing(true)
+
+    // Limpiar timeout anterior si existe
+    if (glowTimeoutRef.current) {
+      clearTimeout(glowTimeoutRef.current)
+    }
+
+    // Si estamos en la biblia, iniciar contador para apagar el brillo
+    if (pathname === '/biblia') {
+      glowTimeoutRef.current = setTimeout(() => {
+        setIsBibleGlowing(false)
+      }, 6660) // 6.66 segundos
+    }
+
+    return () => {
+      if (glowTimeoutRef.current) {
+        clearTimeout(glowTimeoutRef.current)
+      }
+    }
+  }, [pathname])
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border">
       <div className="flex items-center justify-around px-2 py-2">
         {mainNavItems.map((item) => {
           const isActive = pathname === item.href
+          const isBible = item.label === "Biblia"
+          const showBibleGlow = isBible && isBibleGlowing
+          
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all",
-                isActive ? "text-primary" : "text-muted-foreground",
+                "flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all duration-1000",
+                isActive && !isBible ? "text-primary" : "text-muted-foreground",
+                showBibleGlow && "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]",
+                isBible && !showBibleGlow && isActive && "text-primary" // Estado "normal" activo cuando se apaga
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <item.icon 
+                className={cn(
+                  "w-5 h-5 transition-all duration-1000", 
+                  isActive && !isBible && "text-primary",
+                  showBibleGlow && "text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.8)]",
+                  isBible && !showBibleGlow && isActive && "text-primary"
+                )} 
+              />
+              <span className={cn(
+                "text-[10px] font-medium transition-all duration-1000",
+                showBibleGlow && "font-bold text-amber-400",
+                isBible && !showBibleGlow && isActive && "text-primary font-medium"
+              )}>
+                {item.label}
+              </span>
             </Link>
           )
         })}
@@ -62,11 +113,36 @@ export function MobileNav() {
               <span className="text-[10px] font-medium">Menú</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[80%] sm:w-[385px]">
+          <SheetContent side="right" className="w-[85%] sm:w-[385px] overflow-y-auto">
             <SheetHeader className="text-left mb-6">
               <SheetTitle>Menú Principal</SheetTitle>
             </SheetHeader>
-            <div className="grid gap-2">
+
+            {/* Perfil Resumen Móvil */}
+            <div className="mb-6 p-4 rounded-xl bg-secondary/50 border border-border/50">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <Crown className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
+                    {user?.name || "Invitado"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Nivel {progress.nivel} • {progress.titulo}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">XP Total</span>
+                  <span className="font-bold text-foreground">{progress.xp}/{progress.xpParaSiguienteNivel}</span>
+                </div>
+                <Progress value={progressPercent} className="h-2" />
+              </div>
+            </div>
+
+            <div className="grid gap-1">
               {allNavItems.map((item) => {
                 const isActive = pathname === item.href
                 return (
