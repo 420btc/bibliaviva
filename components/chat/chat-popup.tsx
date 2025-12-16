@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { AIChat, type AIChatRef } from "@/components/chat/ai-chat"
 import { MessageCircle, X, Minus, Eraser, Maximize2 } from "lucide-react"
@@ -21,9 +21,21 @@ export function ChatPopup() {
   const chatRef = useRef<AIChatRef>(null)
   const { user } = useAuth()
   const pathname = usePathname()
+  const [isZenReading, setIsZenReading] = useState(false)
+
+  useEffect(() => {
+    const root = document.documentElement
+    const update = () => setIsZenReading(root.classList.contains("zen-reading"))
+    update()
+
+    const observer = new MutationObserver(update)
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] })
+    return () => observer.disconnect()
+  }, [])
 
   // No mostrar en login o páginas públicas si es necesario
   if (pathname === '/login' || pathname === '/register') return null
+  if (isZenReading) return null
 
   const handleClear = async () => {
     if (!user?.id) return
