@@ -104,6 +104,8 @@ export function BibleReader() {
   const [isZenReading, setIsZenReading] = useState(false)
   const isZenReadingRef = useRef(false)
   const hideTopNavTimeoutRef = useRef<number | null>(null)
+  const rafScrollHandleRef = useRef<number | null>(null)
+  const lastScrollTopRef = useRef(0)
   
   // New States for Features
   const [isComparing, setIsComparing] = useState(false)
@@ -208,32 +210,50 @@ export function BibleReader() {
     else root.classList.remove("zen-sidebar-peek")
   }, [])
 
-  const handleReadingScroll = useCallback(() => {
+  const applyScrollState = useCallback(
+    (y: number) => {
+      const atTop = y <= 0
+      const isScrollMode = viewMode === "scroll"
+
+      // Histéresis: en PC se activa con el mínimo scroll (y > 0),
+      // pero solo se desactiva al volver arriba del todo (y <= 0)
+      const nextZen = !isMobile && isScrollMode
+        ? (isZenReadingRef.current ? !atTop : y > 0)
+        : false
+
+      setIsZenReading((prev) => (prev === nextZen ? prev : nextZen))
+      setZenRootClass(nextZen)
+      if (!nextZen) setZenSidebarPeekClass(false)
+
+      if (atTop) {
+        setShowReadingHeader(true)
+        setShowTopNav(true)
+        if (hideTopNavTimeoutRef.current) {
+          window.clearTimeout(hideTopNavTimeoutRef.current)
+          hideTopNavTimeoutRef.current = null
+        }
+        return
+      }
+
+      setShowReadingHeader(false)
+      if (nextZen) setShowTopNav(false)
+    },
+    [isMobile, setZenRootClass, setZenSidebarPeekClass, viewMode]
+  )
+
+  const handleReadingScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const el = readingScrollRef.current
     if (!el) return
+    if (e.currentTarget !== el) return
 
-    const y = el.scrollTop
-    const atTop = y <= 0
-    const isScrollMode = viewMode === "scroll"
-    const nextZen = !isMobile && isScrollMode && y > 1
+    lastScrollTopRef.current = el.scrollTop
 
-    setIsZenReading((prev) => (prev === nextZen ? prev : nextZen))
-    setZenRootClass(nextZen)
-    if (!nextZen) setZenSidebarPeekClass(false)
-
-    if (atTop) {
-      setShowReadingHeader(true)
-      setShowTopNav(true)
-      if (hideTopNavTimeoutRef.current) {
-        window.clearTimeout(hideTopNavTimeoutRef.current)
-        hideTopNavTimeoutRef.current = null
-      }
-      return
-    }
-
-    setShowReadingHeader(false)
-    if (nextZen) setShowTopNav(false)
-  }, [isMobile, setZenRootClass, setZenSidebarPeekClass, viewMode])
+    if (rafScrollHandleRef.current) return
+    rafScrollHandleRef.current = window.requestAnimationFrame(() => {
+      rafScrollHandleRef.current = null
+      applyScrollState(lastScrollTopRef.current)
+    })
+  }, [applyScrollState])
 
   useEffect(() => {
     if (!isZenReading || isMobile) return
@@ -1478,7 +1498,8 @@ export function BibleReader() {
         <BookView />
       ) : (
         <div className={cn(
-          "flex-1 overflow-y-auto pt-0 px-4 pb-4 md:pt-0 md:px-8 md:pb-8 w-full",
+          "flex-1 overflow-y-auto px-4 pb-4 md:px-8 md:pb-8 w-full",
+          "pt-0 md:pt-0",
           isComparing ? "max-w-full" : "max-w-4xl mx-auto"
         )} ref={readingScrollRef} onScroll={handleReadingScroll} onPointerDownCapture={handleReadingTextPointerDownCapture}>
           {isLoading ? (
@@ -1498,7 +1519,11 @@ export function BibleReader() {
               </Button>
             </div>
           ) : (
-            <div className={cn("grid gap-8 pb-20", isComparing ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
+            <>
+              {isZenReading && !isMobile && (
+                <div className="h-10" />
+              )}
+              <div className={cn("grid gap-8 pb-20", isComparing ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
               {/* Columna Principal */}
               <div className="space-y-1">
                 <div
@@ -1642,7 +1667,8 @@ export function BibleReader() {
                   </Button>
                 </div>
               </div>
-            </div>
+              </div>
+            </>
           )}
         </div>
       )}
