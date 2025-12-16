@@ -25,6 +25,7 @@ import {
 } from "lucide-react"
 import { SettingsDialog } from "@/components/settings/settings-dialog"
 import { useState } from "react"
+import { getCurrentSeason } from "@/lib/seasons"
 
 const navItems = [
   { href: "/", icon: Home, label: "Inicio" },
@@ -43,6 +44,14 @@ export function Sidebar() {
   const { user, logout } = useAuth()
   const { progress } = useUserProgress()
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  const season = getCurrentSeason()
+  const hoverGlowClass =
+    season.id === "christmas"
+      ? "hover:bg-red-500/10 hover:ring-red-400/30 hover:shadow-[0_0_24px_-10px_rgba(239,68,68,0.8)]"
+      : season.id === "easter"
+        ? "hover:bg-emerald-500/10 hover:ring-emerald-400/30 hover:shadow-[0_0_24px_-10px_rgba(52,211,153,0.8)]"
+        : "hover:bg-white/5 hover:ring-white/20 hover:shadow-[0_0_24px_-10px_rgba(255,255,255,0.35)]"
 
   // Calcular porcentaje para el siguiente nivel
   const progressPercent = (progress.xp / progress.xpParaSiguienteNivel) * 100
@@ -99,12 +108,12 @@ export function Sidebar() {
                 return (
                   <Link key={item.href} href={item.href} className="block">
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       className={cn(
-                        "w-full justify-start gap-4 px-4 py-6 text-base font-medium transition-all duration-200",
+                        "w-full justify-start gap-4 px-4 py-6 text-base font-medium transition-all duration-200 ring-1 ring-transparent bg-transparent",
                         isActive
-                          ? "bg-primary/10 text-primary hover:bg-primary/15 shadow-sm"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                          ? cn("bg-primary/10 text-primary shadow-sm", hoverGlowClass)
+                          : cn("text-muted-foreground hover:text-foreground", hoverGlowClass)
                       )}
                     >
                       <item.icon className={cn("w-6 h-6", isActive && "text-primary")} />
@@ -119,7 +128,10 @@ export function Sidebar() {
           <div className="p-6 border-t border-border mt-auto bg-card/10">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-4 px-4 py-6 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 mb-2"
+              className={cn(
+                "w-full justify-start gap-4 px-4 py-6 text-base font-medium text-muted-foreground hover:text-foreground mb-2 ring-1 ring-transparent",
+                hoverGlowClass
+              )}
               onClick={() => setSettingsOpen(true)}
             >
               <Settings className="w-6 h-6" />
