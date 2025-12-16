@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Inter, Merriweather } from "next/font/google"
+import { Inter, Merriweather, Great_Vibes } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { AuthProvider } from "@/components/auth-provider"
@@ -13,6 +13,11 @@ const inter = Inter({ subsets: ["latin"] })
 const merriweather = Merriweather({
   weight: ["300", "400", "700"],
   subsets: ["latin"],
+})
+const greatVibes = Great_Vibes({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-great-vibes",
 })
 
 export const metadata: Metadata = {
@@ -39,7 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="font-sans antialiased">
+      <body className={`font-sans antialiased ${greatVibes.variable}`}>
         <AuthProvider>
           <SettingsProvider>
             <ThemeProvider
