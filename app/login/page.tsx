@@ -141,14 +141,41 @@ export default function LoginPage() {
       
       {/* Mobile Features (visible only on small screens below form) */}
       <div className="md:hidden mt-8 w-full max-w-md space-y-4">
+          <div>
+              <h2 className="text-2xl font-bold mb-3 text-white drop-shadow-lg text-center">
+                  Explora la Palabra como nunca antes.
+              </h2>
+              <p className="text-sm text-white leading-relaxed drop-shadow-md text-center mb-4">
+                  Biblia Viva combina la sabiduría eterna de las Escrituras con tecnología moderna para enriquecer tu vida espiritual diaria.
+              </p>
+          </div>
+          
           <p className="text-center text-sm text-white mb-4 drop-shadow-md">Descubre todas las funcionalidades:</p>
-          <div className="grid grid-cols-2 gap-3">
-            {features.map((feature, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-2 p-3 rounded-lg bg-card/30 border border-border/30 text-center">
-                    <feature.icon className="w-6 h-6 text-primary" />
-                    <span className="text-xs font-medium text-white">{feature.text}</span>
-                </div>
-            ))}
+          <div className="grid grid-cols-1 gap-4">
+              {features.map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-4 p-4 rounded-xl bg-card/40 border border-border/50 backdrop-blur-sm shadow-xl">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary shadow-inner shrink-0">
+                          <feature.icon className="w-5 h-5 drop-shadow-sm" />
+                      </div>
+                      <span className="font-medium drop-shadow-sm text-white">{feature.text}</span>
+                  </div>
+              ))}
+          </div>
+          
+          <div className="mt-6 flex justify-center">
+              <TooltipProvider>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground cursor-help hover:text-primary transition-colors bg-secondary/30 px-3 py-1.5 rounded-full border border-border/30">
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>100% Gratis y Seguro</span>
+                          </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-center p-3">
+                          <p>Esta aplicación es totalmente gratuita. No guardamos tus datos personales fuera de tu progreso y no compartimos información con terceros.</p>
+                      </TooltipContent>
+                  </Tooltip>
+              </TooltipProvider>
           </div>
       </div>
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">

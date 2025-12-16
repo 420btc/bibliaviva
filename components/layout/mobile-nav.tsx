@@ -140,6 +140,11 @@ export function MobileNav() {
                 </div>
                 <Progress value={progressPercent} className="h-2" />
               </div>
+              {!user && (
+                <p className="text-xs text-muted-foreground mt-3 italic">
+                  Guarda tus datos iniciando sesión
+                </p>
+              )}
             </div>
 
             <div className="grid gap-1">
