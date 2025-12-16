@@ -44,3 +44,16 @@ export async function getChatHistoryAction(userId: string): Promise<{ success: b
     return { success: false, error: 'Failed to fetch chat history' };
   }
 }
+
+export async function clearChatHistoryAction(userId: string) {
+  try {
+    await sql`
+      DELETE FROM chat_messages 
+      WHERE user_id = ${userId}
+    `;
+    return { success: true };
+  } catch (error) {
+    console.error('Error clearing chat history:', error);
+    return { success: false, error: 'Failed to clear chat history' };
+  }
+}

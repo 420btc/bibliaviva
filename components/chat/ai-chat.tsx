@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ import { useAuth } from "@/components/auth-provider"
 import { saveChatMessageAction, getChatHistoryAction, type Message } from "@/actions/chat"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
 
 const suggestedQuestions = [
   { icon: BookOpen, text: "¿Qué significa nacer de nuevo?" },
@@ -33,7 +34,12 @@ const initialMessages: Message[] = [
   },
 ]
 
-export function AIChat() {
+export interface AIChatRef {
+  clear: () => void
+  reload: () => Promise<void>
+}
+
+export const AIChat = forwardRef<AIChatRef, { className?: string }>(({ className }, ref) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
@@ -42,25 +48,31 @@ export function AIChat() {
   const { user } = useAuth()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Cargar historial
-  useEffect(() => {
-    const loadHistory = async () => {
-        if (user?.id) {
-            try {
-                const res = await getChatHistoryAction(user.id)
-                if (res.success && res.data && res.data.length > 0) {
-                    setMessages(res.data)
-                } else {
-                    setMessages(initialMessages)
-                }
-            } catch (e) {
-                console.error(e)
+  const loadHistory = async () => {
+    if (user?.id) {
+        try {
+            const res = await getChatHistoryAction(user.id)
+            if (res.success && res.data && res.data.length > 0) {
+                setMessages(res.data)
+            } else {
                 setMessages(initialMessages)
             }
-        } else {
+        } catch (e) {
+            console.error(e)
             setMessages(initialMessages)
         }
+    } else {
+        setMessages(initialMessages)
     }
+  }
+
+  useImperativeHandle(ref, () => ({
+    clear: () => setMessages(initialMessages),
+    reload: loadHistory
+  }))
+
+  // Cargar historial
+  useEffect(() => {
     loadHistory()
   }, [user])
 
@@ -231,7 +243,7 @@ export function AIChat() {
   }
 
   return (
-    <div className="flex flex-col h-full w-full glass-card rounded-2xl border border-primary/20 overflow-hidden shadow-sm relative">
+    <div className={cn("flex flex-col h-full w-full glass-card rounded-2xl border border-primary/20 overflow-hidden shadow-sm relative", className)}>
       <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
         <div className="space-y-6 max-w-4xl mx-auto pb-4">
           {messages.map((message) => (
@@ -315,4 +327,5 @@ export function AIChat() {
       </div>
     </div>
   )
-}
+})
+AIChat.displayName = "AIChat"

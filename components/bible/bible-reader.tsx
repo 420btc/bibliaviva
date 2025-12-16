@@ -761,18 +761,24 @@ export function BibleReader() {
     const rightColumn = verses.slice(midPoint)
 
     return (
-      <div className="flex-1 overflow-hidden p-4 md:p-8 w-full h-full bg-[#fdfbf7] dark:bg-[#000000]">
-        <div className="h-full max-w-7xl mx-auto bg-card rounded-lg shadow-xl border border-border flex flex-col md:flex-row overflow-hidden relative">
+      <div className="flex-1 overflow-hidden p-0 md:p-0 w-full h-full bg-[#fdfbf7] dark:bg-[#000000]">
+        <div className="h-full w-full mx-auto bg-card rounded-none shadow-none border-0 flex flex-col md:flex-row overflow-hidden relative">
           {/* Sombra central del libro */}
           <div className="absolute left-1/2 top-0 bottom-0 w-12 -ml-6 bg-gradient-to-r from-transparent via-black/5 to-transparent z-10 hidden md:block pointer-events-none" />
           
           {/* Página Izquierda */}
-          <div className="flex-1 p-8 md:pr-12 overflow-y-auto border-r border-border/10">
-            <div className="mb-6 text-center">
+          <div className="flex-1 flex flex-col border-r border-border/10">
+            <div className="text-center bg-[#fdfbf7] dark:bg-[#000000] z-50 py-6 px-8 border-b border-border/5 shadow-sm shrink-0">
               <h2 className="text-2xl font-serif font-bold text-foreground/80">{selectedBook.nombre}</h2>
-              <span className="text-xs text-muted-foreground uppercase tracking-widest">Capítulo {selectedChapter}</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-widest pb-2 block">Capítulo {selectedChapter}</span>
+              <div className="flex justify-center">
+                 <Button variant="outline" size="sm" className="h-6 text-xs bg-muted/50 border-border/50">
+                    REINA VALERA 1960
+                 </Button>
+              </div>
             </div>
-            <div className="space-y-1 text-justify">
+            <div className="flex-1 overflow-y-auto p-8 pt-4 md:pr-12">
+              <div className="space-y-1 text-justify">
               {leftColumn.map((verse) => {
                 const verseNum = parseInt(verse.number)
                 const isSelected = selectedVerses.includes(verseNum)
@@ -805,12 +811,21 @@ export function BibleReader() {
                 </Button>
               )}
             </div>
+            </div>
           </div>
 
           {/* Página Derecha */}
-          <div className="flex-1 p-8 md:pl-12 overflow-y-auto bg-card/50">
+          <div className="flex-1 flex flex-col bg-card/50 overflow-hidden">
+             {/* Invisible Spacer Header */}
+             <div className="shrink-0 py-6 px-8 border-b border-transparent invisible">
+                <h2 className="text-2xl font-serif font-bold">Spacer</h2>
+                <span className="text-xs uppercase pb-2 block">Spacer</span>
+                 <div className="flex justify-center"><Button className="h-6">Spacer</Button></div>
+             </div>
+             
+             <div className="flex-1 overflow-y-auto p-8 pt-4 md:pl-12">
              {/* En móvil, mostrar título de continuación si es necesario, en PC oculto */}
-             <div className="md:hidden mb-6 text-center border-t border-border pt-6">
+             <div className="md:hidden mb-4 text-center border-t border-border pt-6">
                 <span className="text-xs text-muted-foreground uppercase tracking-widest">Continuación</span>
              </div>
 
@@ -848,6 +863,7 @@ export function BibleReader() {
                 </Button>
               )}
             </div>
+            </div>
           </div>
         </div>
       </div>
@@ -860,7 +876,7 @@ export function BibleReader() {
       {isSearchOpen && renderSearchDialog()}
       
       {/* Header de navegación */}
-      <header className="border-b border-border px-4 pt-4 pb-1 md:p-4 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border px-4 py-2 md:py-3 flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-30 shrink-0">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowBookSelector(true)} className="gap-2">
             <Book className="w-4 h-4" />
