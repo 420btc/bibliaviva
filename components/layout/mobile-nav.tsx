@@ -22,13 +22,13 @@ const allNavItems = [
   { href: "/", icon: Home, label: "Inicio" },
   { href: "/biblia", icon: Book, label: "Biblia" },
   { href: "/chat", icon: MessageCircle, label: "Chat IA" },
-  { href: "/contexto-historico", icon: History, label: "Contexto Histórico" },
   { href: "/planes", icon: CalendarRange, label: "Planes de Lectura" },
   { href: "/oraciones", icon: Heart, label: "Muro de Oración" },
   { href: "/notas", icon: StickyNote, label: "Mis Notas" },
   { href: "/explorador", icon: Network, label: "Explorador Temático" },
   { href: "/viaje", icon: Trophy, label: "Mi Viaje" },
   { href: "/grupos", icon: Users, label: "Comunidad" },
+  { href: "/contexto-historico", icon: History, label: "Contexto Histórico" },
 ]
 
 export function MobileNav() {
