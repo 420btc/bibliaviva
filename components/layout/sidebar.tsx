@@ -21,7 +21,8 @@ import {
   Crown,
   Heart,
   StickyNote,
-  CalendarRange
+  CalendarRange,
+  History
 } from "lucide-react"
 import { SettingsDialog } from "@/components/settings/settings-dialog"
 import { useState } from "react"
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/", icon: Home, label: "Inicio" },
   { href: "/viaje", icon: Trophy, label: "Mi Viaje" },
   { href: "/biblia", icon: Book, label: "Biblia" },
+  { href: "/contexto-historico", icon: History, label: "Contexto Histórico" },
   { href: "/oraciones", icon: Heart, label: "Oraciones" },
   { href: "/explorador", icon: Network, label: "Explorador" },
   { href: "/grupos", icon: Users, label: "Comunidad" },
