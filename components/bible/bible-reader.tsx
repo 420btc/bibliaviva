@@ -841,18 +841,50 @@ export function BibleReader() {
             </div>
           )}
           {filteredBooks.at.map(book => (
-            <Button
-              key={book.id}
-              variant={selectedBook.id === book.id ? "default" : "outline"}
-              className="justify-start"
-              onClick={() => {
-                setSelectedBook(book)
-                setSelectedChapter(1)
-                setShowBookSelector(false)
-              }}
-            >
-              {book.nombre}
-            </Button>
+            <div key={book.id} className="flex items-center gap-1">
+              <Button
+                variant={selectedBook.id === book.id ? "default" : "outline"}
+                className="justify-start flex-1 truncate px-2 sm:px-4"
+                onClick={() => {
+                  setSelectedBook(book)
+                  setSelectedChapter(1)
+                  setShowBookSelector(false)
+                }}
+              >
+                {book.nombre}
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary">
+                    <HelpCircle className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4 z-50" align="start" side="bottom">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif font-bold text-lg">{book.nombre}</h4>
+                      <span className="text-xs font-mono text-muted-foreground">{book.abreviatura}</span>
+                    </div>
+                    
+                    {book.categoria && (
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] uppercase tracking-wider font-semibold border border-primary/20">
+                        {book.categoria}
+                      </span>
+                    )}
+                    
+                    {book.resumen && (
+                      <p className="text-sm text-muted-foreground leading-relaxed italic border-l-2 border-primary/30 pl-3">
+                        {book.resumen}
+                      </p>
+                    )}
+                    
+                    <div className="text-xs text-muted-foreground pt-2 border-t flex justify-between">
+                      <span>Capítulos: {book.capitulos}</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           ))}
           
           {filteredBooks.nt.length > 0 && (
@@ -861,18 +893,50 @@ export function BibleReader() {
             </div>
           )}
           {filteredBooks.nt.map(book => (
-            <Button
-              key={book.id}
-              variant={selectedBook.id === book.id ? "default" : "outline"}
-              className="justify-start"
-              onClick={() => {
-                setSelectedBook(book)
-                setSelectedChapter(1)
-                setShowBookSelector(false)
-              }}
-            >
-              {book.nombre}
-            </Button>
+            <div key={book.id} className="flex items-center gap-1">
+              <Button
+                variant={selectedBook.id === book.id ? "default" : "outline"}
+                className="justify-start flex-1 truncate px-2 sm:px-4"
+                onClick={() => {
+                  setSelectedBook(book)
+                  setSelectedChapter(1)
+                  setShowBookSelector(false)
+                }}
+              >
+                {book.nombre}
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary">
+                    <HelpCircle className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4 z-50" align="start" side="bottom">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif font-bold text-lg">{book.nombre}</h4>
+                      <span className="text-xs font-mono text-muted-foreground">{book.abreviatura}</span>
+                    </div>
+                    
+                    {book.categoria && (
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] uppercase tracking-wider font-semibold border border-primary/20">
+                        {book.categoria}
+                      </span>
+                    )}
+                    
+                    {book.resumen && (
+                      <p className="text-sm text-muted-foreground leading-relaxed italic border-l-2 border-primary/30 pl-3">
+                        {book.resumen}
+                      </p>
+                    )}
+                    
+                    <div className="text-xs text-muted-foreground pt-2 border-t flex justify-between">
+                      <span>Capítulos: {book.capitulos}</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           ))}
         </div>
       </ScrollArea>
