@@ -841,7 +841,7 @@ export function BibleReader() {
             </div>
           )}
           {filteredBooks.at.map(book => (
-            <div key={book.id} className="flex items-center gap-1">
+            <div key={book.id} className="flex items-center gap-1 group">
               <Button
                 variant={selectedBook.id === book.id ? "default" : "outline"}
                 className="justify-start flex-1 truncate px-2 sm:px-4"
@@ -855,7 +855,7 @@ export function BibleReader() {
               </Button>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100">
                     <HelpCircle className="w-4 h-4" />
                   </Button>
                 </PopoverTrigger>
