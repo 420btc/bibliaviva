@@ -1,6 +1,8 @@
 'use server';
 
 import { sql } from '@/lib/db';
+import { addLightPointsAction } from '@/actions/pet';
+import { PET_CONFIG } from '@/lib/pet-system';
 
 export async function saveProgressAction(userId: string, bookId: string, chapter: number) {
   try {
@@ -26,10 +28,10 @@ export async function markChapterAsReadAction(userId: string, bookId: string, ch
     // Por ahora, asumiremos que necesitamos crear esta tabla o usar una estructura JSON en user_progress
     // Para simplificar sin migraciones complejas ahora mismo, actualizaremos el contador en user_progress
     // y guardaremos el registro específico si la tabla existe (idealmente).
-    
+
     // Vamos a intentar guardar en una tabla 'completed_chapters' si existe, o fallar silenciosamente si no.
     // Pero lo más importante es actualizar el contador global.
-    
+
     await sql`
       INSERT INTO completed_chapters (user_id, book_id, chapter, completed_at)
       VALUES (${userId}, ${bookId}, ${chapter}, CURRENT_TIMESTAMP)
@@ -37,7 +39,15 @@ export async function markChapterAsReadAction(userId: string, bookId: string, ch
         completed_at = CURRENT_TIMESTAMP
     `;
 
-    return { success: true };
+    // 2. Añadir puntos de luz para la mascota virtual
+    try {
+      await addLightPointsAction(userId, PET_CONFIG.POINTS_PER_CHAPTER);
+    } catch (petError) {
+      // No fallar la lectura si el sistema de mascota falla
+      console.error('Error adding light points to pet:', petError);
+    }
+
+    return { success: true, lightPointsAdded: PET_CONFIG.POINTS_PER_CHAPTER };
   } catch (error) {
     console.error('Error marking chapter as read:', error);
     // Si falla porque la tabla no existe, al menos intentamos actualizar el progreso global
@@ -53,13 +63,13 @@ export async function getCompletedChaptersAction(userId: string) {
       WHERE user_id = ${userId}
       ORDER BY completed_at DESC
     `;
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: rows.map(r => ({
         bookId: r.book_id,
         chapter: r.chapter,
         completedAt: r.completed_at
-      })) 
+      }))
     };
   } catch (error) {
     console.error('Error fetching completed chapters:', error);

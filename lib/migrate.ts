@@ -208,7 +208,26 @@ export async function migrate() {
       );
     `;
     console.log('Created group_messages table');
-    
+
+    // Table: user_pet (mascota virtual - querubín de luz)
+    await sql`
+      CREATE TABLE IF NOT EXISTS user_pet (
+        user_id TEXT PRIMARY KEY,
+        light_points INTEGER DEFAULT 0,
+        energy INTEGER DEFAULT 100,
+        level INTEGER DEFAULT 1,
+        total_points_spent INTEGER DEFAULT 0,
+        last_fed TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        last_decay_check TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        accessories TEXT[] DEFAULT '{}',
+        selected_accessory TEXT,
+        background_theme TEXT DEFAULT 'celestial',
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    console.log('Created user_pet table');
+
     console.log('Migration completed successfully');
     return { success: true };
   } catch (error) {

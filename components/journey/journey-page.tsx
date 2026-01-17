@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { insignias, desafiosSemanales, niveles } from "@/lib/gamification"
-import { Trophy, Flame, Star, Target, Lock, CheckCircle2, ChevronRight, Zap, Medal, BookOpen } from "lucide-react"
+import { Trophy, Flame, Star, Target, Lock, CheckCircle2, ChevronRight, Zap, Medal, BookOpen, Sparkles } from "lucide-react"
+import { SpiritPet } from "@/components/journey/spirit-pet"
 import { motion } from "framer-motion"
 import { useUserProgress } from "@/hooks/use-user-progress"
 import { getCompletedChaptersAction } from "@/actions/progress"
@@ -22,7 +23,7 @@ export function JourneyPage() {
   const [score, setScore] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [showResult, setShowResult] = useState(false)
-  
+
   // Estado para historial de lecturas
   const [completedChapters, setCompletedChapters] = useState<any[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
@@ -68,8 +69,8 @@ export function JourneyPage() {
           }))
           setQuizQuestions(mappedQuestions)
         } else {
-           // Fallback si falla la carga o no hay preguntas
-           console.error("No se pudieron cargar las preguntas")
+          // Fallback si falla la carga o no hay preguntas
+          console.error("No se pudieron cargar las preguntas")
         }
         setIsLoadingQuestions(false)
       })
@@ -78,12 +79,12 @@ export function JourneyPage() {
 
   const handleAnswer = (index: number) => {
     setSelectedAnswer(index)
-    
+
     // Registrar respuesta en DB
     if (authUser?.id && quizQuestions[currentQuestion]) {
-        const q = quizQuestions[currentQuestion]
-        const isCorrect = index === q.respuestaCorrecta
-        recordQuestionAnsweredAction(authUser.id, q.id, isCorrect)
+      const q = quizQuestions[currentQuestion]
+      const isCorrect = index === q.respuestaCorrecta
+      recordQuestionAnsweredAction(authUser.id, q.id, isCorrect)
     }
 
     setTimeout(() => {
@@ -182,35 +183,42 @@ export function JourneyPage() {
       <Tabs defaultValue="insignias" className="space-y-8">
         <div className="flex justify-center w-full">
           <TabsList className="bg-secondary/50 backdrop-blur-sm p-1.5 h-auto rounded-full border border-border/50 inline-flex flex-wrap justify-center gap-2">
-            <TabsTrigger 
-              value="insignias" 
+            <TabsTrigger
+              value="insignias"
               className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
             >
               Insignias
             </TabsTrigger>
-            <TabsTrigger 
-              value="leidos" 
+            <TabsTrigger
+              value="leidos"
               className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
             >
               Leídos
             </TabsTrigger>
-            <TabsTrigger 
-              value="niveles" 
+            <TabsTrigger
+              value="niveles"
               className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
             >
               Niveles
             </TabsTrigger>
-            <TabsTrigger 
-              value="quiz" 
+            <TabsTrigger
+              value="quiz"
               className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
             >
               Quiz del Día
             </TabsTrigger>
-            <TabsTrigger 
-              value="desafios" 
+            <TabsTrigger
+              value="desafios"
               className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all"
             >
               Desafíos
+            </TabsTrigger>
+            <TabsTrigger
+              value="companero"
+              className="rounded-full px-6 py-2.5 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all flex items-center gap-1"
+            >
+              <Sparkles className="w-4 h-4" />
+              Compañero
             </TabsTrigger>
           </TabsList>
         </div>
@@ -267,25 +275,25 @@ export function JourneyPage() {
 
             {completedChapters.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {completedChapters.map((chapter, i) => {
-                    const book = bibleBooks.antiguoTestamento.find(b => b.id === chapter.bookId) || 
-                                 bibleBooks.nuevoTestamento.find(b => b.id === chapter.bookId) || 
-                                 getAllBooksFlat().find(b => b.id === chapter.bookId)
-                    
-                    const bookName = book?.nombre || "Libro desconocido"
-                    
-                    return (
-                      <div key={i} className="p-4 border rounded-lg bg-secondary/30 border-border animate-in fade-in slide-in-from-bottom-2">
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="font-semibold text-foreground">{bookName} {chapter.chapter}</span>
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Leído el {new Date(chapter.completedAt).toLocaleDateString()}
-                          </p>
+                {completedChapters.map((chapter, i) => {
+                  const book = bibleBooks.antiguoTestamento.find(b => b.id === chapter.bookId) ||
+                    bibleBooks.nuevoTestamento.find(b => b.id === chapter.bookId) ||
+                    getAllBooksFlat().find(b => b.id === chapter.bookId)
+
+                  const bookName = book?.nombre || "Libro desconocido"
+
+                  return (
+                    <div key={i} className="p-4 border rounded-lg bg-secondary/30 border-border animate-in fade-in slide-in-from-bottom-2">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-semibold text-foreground">{bookName} {chapter.chapter}</span>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                       </div>
-                    )
-                 })}
+                      <p className="text-xs text-muted-foreground">
+                        Leído el {new Date(chapter.completedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )
+                })}
               </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
@@ -319,9 +327,8 @@ export function JourneyPage() {
                   <Card className={`glass-card p-4 ${isCurrentLevel && "ring-2 ring-primary"}`}>
                     <div className="flex items-center gap-4">
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          isUnlocked ? "gradient-primary" : "bg-secondary"
-                        }`}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center ${isUnlocked ? "gradient-primary" : "bg-secondary"
+                          }`}
                       >
                         {isUnlocked ? (
                           <Medal className="w-6 h-6 text-primary-foreground" />
@@ -400,15 +407,14 @@ export function JourneyPage() {
                     <Button
                       key={index}
                       variant="outline"
-                      className={`w-full justify-start text-left h-auto py-3 transition-all duration-200 ${
-                        showAnswer && isCorrect
-                          ? "!border-green-500 !bg-green-100 dark:!bg-green-900/30 !text-green-700 dark:!text-green-400 opacity-100"
-                          : showAnswer && isSelected && !isCorrect
-                            ? "!border-red-500 !bg-red-100 dark:!bg-red-900/30 !text-red-700 dark:!text-red-400 opacity-100"
-                            : showAnswer 
-                              ? "opacity-50" 
-                              : ""
-                      }`}
+                      className={`w-full justify-start text-left h-auto py-3 transition-all duration-200 ${showAnswer && isCorrect
+                        ? "!border-green-500 !bg-green-100 dark:!bg-green-900/30 !text-green-700 dark:!text-green-400 opacity-100"
+                        : showAnswer && isSelected && !isCorrect
+                          ? "!border-red-500 !bg-red-100 dark:!bg-red-900/30 !text-red-700 dark:!text-red-400 opacity-100"
+                          : showAnswer
+                            ? "opacity-50"
+                            : ""
+                        }`}
                       onClick={() => !showAnswer && handleAnswer(index)}
                       disabled={false}
                     >
@@ -422,9 +428,9 @@ export function JourneyPage() {
               </div>
             </Card>
           ) : (
-             <div className="text-center py-12">
-               <p className="text-muted-foreground mb-4">No hay preguntas disponibles por ahora o hubo un error al cargar.</p>
-               <Button onClick={resetQuiz} variant="outline">Volver</Button>
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">No hay preguntas disponibles por ahora o hubo un error al cargar.</p>
+              <Button onClick={resetQuiz} variant="outline">Volver</Button>
             </div>
           )}
         </TabsContent>
@@ -458,6 +464,11 @@ export function JourneyPage() {
               </motion.div>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Compañero Espiritual */}
+        <TabsContent value="companero">
+          <SpiritPet />
         </TabsContent>
       </Tabs>
     </div>
