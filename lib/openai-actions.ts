@@ -2,6 +2,21 @@
 
 import OpenAI from "openai"
 
+function envOrDefault(name: string, fallback: string) {
+  const value = process.env[name]
+  if (!value) return fallback
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : fallback
+}
+
+const OPENAI_MODELS = {
+  chat: envOrDefault("OPENAI_CHAT_MODEL", "gpt-5-nano"),
+  study: envOrDefault("OPENAI_STUDY_MODEL", "gpt-5-mini"),
+  geo: envOrDefault("OPENAI_GEO_MODEL", "gpt-5-nano"),
+  image: envOrDefault("OPENAI_IMAGE_MODEL", "gpt-image-1-mini"),
+  tts: envOrDefault("OPENAI_TTS_MODEL", "tts-1"),
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
@@ -9,7 +24,7 @@ const openai = new OpenAI({
 export async function generateVerseImage(verseText: string) {
   try {
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: OPENAI_MODELS.image,
       prompt: `Una imagen artística, espiritual y serena que represente este versículo bíblico: "${verseText}". Estilo pintura al óleo suave, luz divina, inspirador. Sin texto.`,
       n: 1,
       size: "1024x1024",
@@ -19,7 +34,14 @@ export async function generateVerseImage(verseText: string) {
       throw new Error("No se recibió imagen de OpenAI")
     }
 
-    return { url: response.data[0].url }
+    const first = response.data[0]
+    if ("b64_json" in first && first.b64_json) {
+      return { url: `data:image/png;base64,${first.b64_json}` }
+    }
+    if ("url" in first && first.url) {
+      return { url: first.url }
+    }
+    throw new Error("La respuesta de imagen no contiene datos utilizables")
   } catch (error) {
     console.error("Error generating image:", error)
     throw new Error("No se pudo generar la imagen")
@@ -29,7 +51,7 @@ export async function generateVerseImage(verseText: string) {
 export async function generateVerseAudio(verseText: string, voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "onyx") {
   try {
     const mp3 = await openai.audio.speech.create({
-      model: "tts-1",
+      model: OPENAI_MODELS.tts,
       voice: voice,
       input: verseText,
     })
@@ -45,7 +67,7 @@ export async function generateVerseAudio(verseText: string, voice: "alloy" | "ec
 export async function getGeographicContext(book: string, chapter: number) {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: OPENAI_MODELS.geo,
       messages: [
         {
           role: "system",
@@ -105,7 +127,7 @@ export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "
     ];
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: OPENAI_MODELS.chat,
       messages: [
         {
           role: "system",
@@ -178,7 +200,7 @@ export async function studyBiblePassage(input: {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: OPENAI_MODELS.study,
       messages: [
         {
           role: "system",

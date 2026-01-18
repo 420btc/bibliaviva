@@ -199,17 +199,22 @@ export const AIChat = forwardRef<AIChatRef, { className?: string }>(({ className
     return (
         <div className="space-y-4">
             {parts.map((part, i) => {
-                if (part.startsWith("http")) {
+                const isImage = part.startsWith("http") || part.startsWith("data:image")
+                if (isImage) {
                     return (
                         <Dialog key={i}>
                             <DialogTrigger asChild>
                                 <div className="relative aspect-square w-full max-w-sm rounded-lg overflow-hidden cursor-zoom-in border border-border hover:opacity-90 transition-opacity my-2">
-                                    <Image 
-                                        src={part} 
-                                        alt="Generated content" 
-                                        fill 
-                                        className="object-cover"
-                                    />
+                                    {part.startsWith("data:image") ? (
+                                      <img src={part} alt="Generated content" className="absolute inset-0 w-full h-full object-cover" />
+                                    ) : (
+                                      <Image 
+                                          src={part} 
+                                          alt="Generated content" 
+                                          fill 
+                                          className="object-cover"
+                                      />
+                                    )}
                                     <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded backdrop-blur-sm flex items-center gap-1">
                                         <ImageIcon className="w-3 h-3" />
                                         Click para ampliar
@@ -218,12 +223,16 @@ export const AIChat = forwardRef<AIChatRef, { className?: string }>(({ className
                             </DialogTrigger>
                             <DialogContent className="max-w-3xl w-full p-0 overflow-hidden bg-transparent border-0 shadow-none">
                                 <div className="relative w-full h-[80vh]">
-                                    <Image 
-                                        src={part} 
-                                        alt="Full size" 
-                                        fill 
-                                        className="object-contain"
-                                    />
+                                    {part.startsWith("data:image") ? (
+                                      <img src={part} alt="Full size" className="absolute inset-0 w-full h-full object-contain" />
+                                    ) : (
+                                      <Image 
+                                          src={part} 
+                                          alt="Full size" 
+                                          fill 
+                                          className="object-contain"
+                                      />
+                                    )}
                                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                                         <Button size="sm" variant="secondary" onClick={() => window.open(part, '_blank')}>
                                             <ExternalLink className="w-4 h-4 mr-2" />
