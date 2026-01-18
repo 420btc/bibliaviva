@@ -11,6 +11,8 @@ export interface BibleBookLocal {
   fechaAprox?: string
   temaCentral?: string
   versiculoClave?: string
+  themeIds?: string[]
+  characterIds?: string[]
 }
 
 export const bibleBooks = {
@@ -550,43 +552,54 @@ export const bibleBooks = {
 
 const bookDetailsById: Record<
   string,
-  Partial<Pick<BibleBookLocal, "autor" | "fechaAprox" | "temaCentral" | "versiculoClave">>
+  Partial<Pick<BibleBookLocal, "autor" | "fechaAprox" | "temaCentral" | "versiculoClave" | "themeIds" | "characterIds">>
 > = {
   genesis: {
     autor: "Moisés (tradicional)",
     fechaAprox: "c. 1446–1406 a.C.",
     temaCentral: "Orígenes, caída, pacto y promesa",
     versiculoClave: "Génesis 12:2-3",
+    themeIds: ["fe", "esperanza"],
+    characterIds: ["abraham"],
   },
   exodo: {
     autor: "Moisés (tradicional)",
     fechaAprox: "c. 1446–1406 a.C.",
     temaCentral: "Redención, pacto y presencia de Dios",
     versiculoClave: "Éxodo 20:2-3",
+    themeIds: ["gracia", "fortaleza"],
+    characterIds: ["moises"],
   },
   levitico: {
     autor: "Moisés (tradicional)",
     fechaAprox: "c. 1446–1406 a.C.",
     temaCentral: "Santidad, adoración y vida consagrada",
     versiculoClave: "Levítico 19:2",
+    themeIds: ["gracia"],
+    characterIds: ["moises"],
   },
   numeros: {
     autor: "Moisés (tradicional)",
     fechaAprox: "c. 1446–1406 a.C.",
     temaCentral: "Peregrinación, disciplina y fidelidad divina",
     versiculoClave: "Números 6:24-26",
+    themeIds: ["fortaleza", "esperanza"],
+    characterIds: ["moises"],
   },
   deuteronomio: {
     autor: "Moisés (tradicional)",
     fechaAprox: "c. 1406 a.C.",
     temaCentral: "Renovación del pacto y llamado a obedecer",
     versiculoClave: "Deuteronomio 6:4-5",
+    themeIds: ["fe", "amor"],
+    characterIds: ["moises"],
   },
   josue: {
     autor: "Josué (tradicional) y compiladores",
     fechaAprox: "c. 1400–1370 a.C.",
     temaCentral: "Conquista, herencia y fidelidad al pacto",
     versiculoClave: "Josué 1:9",
+    themeIds: ["fortaleza", "fe"],
   },
   jueces: {
     autor: "Samuel (tradicional) y compiladores",
@@ -605,18 +618,24 @@ const bookDetailsById: Record<
     fechaAprox: "c. 930 a.C.",
     temaCentral: "Transición a la monarquía y elección del rey",
     versiculoClave: "1 Samuel 16:7",
+    themeIds: ["fe", "fortaleza"],
+    characterIds: ["david"],
   },
   "2-samuel": {
     autor: "Natán y Gad (tradicional) y compiladores",
     fechaAprox: "c. 930 a.C.",
     temaCentral: "Reinado de David y pacto davídico",
     versiculoClave: "2 Samuel 7:16",
+    themeIds: ["fe", "perdon"],
+    characterIds: ["david"],
   },
   "1-reyes": {
     autor: "Compiladores (tradicional: Jeremías)",
     fechaAprox: "c. 560–540 a.C.",
     temaCentral: "Reino, idolatría y división",
     versiculoClave: "1 Reyes 8:61",
+    themeIds: ["sabiduria", "fe"],
+    characterIds: ["salomon"],
   },
   "2-reyes": {
     autor: "Compiladores (tradicional: Jeremías)",
@@ -665,12 +684,16 @@ const bookDetailsById: Record<
     fechaAprox: "c. 1000–400 a.C.",
     temaCentral: "Adoración, oración y vida delante de Dios",
     versiculoClave: "Salmos 23:1",
+    themeIds: ["oracion", "paz", "fortaleza"],
+    characterIds: ["david"],
   },
   proverbios: {
     autor: "Salomón y otros",
     fechaAprox: "c. 950–700 a.C.",
     temaCentral: "Sabiduría práctica para una vida temerosa de Dios",
     versiculoClave: "Proverbios 1:7",
+    themeIds: ["sabiduria"],
+    characterIds: ["salomon"],
   },
   eclesiastes: {
     autor: "Salomón (tradicional)",
@@ -689,6 +712,7 @@ const bookDetailsById: Record<
     fechaAprox: "c. 740–680 a.C.",
     temaCentral: "Santidad, juicio y esperanza mesiánica",
     versiculoClave: "Isaías 53:5",
+    themeIds: ["esperanza", "gracia"],
   },
   jeremias: {
     autor: "Jeremías",
@@ -791,36 +815,48 @@ const bookDetailsById: Record<
     fechaAprox: "c. 60–70 d.C.",
     temaCentral: "Jesús como el Mesías Rey",
     versiculoClave: "Mateo 5:17",
+    themeIds: ["amor", "fe"],
+    characterIds: ["jesus"],
   },
   marcos: {
     autor: "Marcos (tradicional)",
     fechaAprox: "c. 55–65 d.C.",
     temaCentral: "Jesús Siervo; acción y discipulado",
     versiculoClave: "Marcos 10:45",
+    themeIds: ["amor", "gracia"],
+    characterIds: ["jesus"],
   },
   lucas: {
     autor: "Lucas",
     fechaAprox: "c. 60–62 d.C.",
     temaCentral: "Salvación para todos; compasión y misión",
     versiculoClave: "Lucas 19:10",
+    themeIds: ["amor", "perdon", "gracia"],
+    characterIds: ["jesus", "maria"],
   },
   juan: {
     autor: "Juan (tradicional)",
     fechaAprox: "c. 85–95 d.C.",
     temaCentral: "Creer en Jesús y tener vida",
     versiculoClave: "Juan 20:31",
+    themeIds: ["amor", "fe"],
+    characterIds: ["jesus"],
   },
   hechos: {
     autor: "Lucas",
     fechaAprox: "c. 62–70 d.C.",
     temaCentral: "Expansión del Evangelio por el Espíritu",
     versiculoClave: "Hechos 1:8",
+    themeIds: ["fe", "fortaleza"],
+    characterIds: ["pablo", "pedro"],
   },
   romanos: {
     autor: "Pablo",
     fechaAprox: "c. 57 d.C.",
     temaCentral: "El Evangelio y la justicia por fe",
     versiculoClave: "Romanos 1:16-17",
+    themeIds: ["gracia", "fe"],
+    characterIds: ["pablo"],
   },
   "1-corintios": {
     autor: "Pablo",
@@ -845,12 +881,16 @@ const bookDetailsById: Record<
     fechaAprox: "c. 60–62 d.C.",
     temaCentral: "Identidad en Cristo y unidad de la iglesia",
     versiculoClave: "Efesios 2:8-10",
+    themeIds: ["gracia", "amor"],
+    characterIds: ["pablo"],
   },
   filipenses: {
     autor: "Pablo",
     fechaAprox: "c. 60–62 d.C.",
     temaCentral: "Gozo y perseverancia en Cristo",
     versiculoClave: "Filipenses 4:4",
+    themeIds: ["paz", "fortaleza"],
+    characterIds: ["pablo"],
   },
   colosenses: {
     autor: "Pablo",
@@ -899,6 +939,8 @@ const bookDetailsById: Record<
     fechaAprox: "c. 60–70 d.C.",
     temaCentral: "Superioridad de Cristo y perseverancia en la fe",
     versiculoClave: "Hebreos 4:14-16",
+    themeIds: ["fe", "esperanza"],
+    characterIds: ["jesus"],
   },
   santiago: {
     autor: "Santiago",
@@ -947,6 +989,8 @@ const bookDetailsById: Record<
     fechaAprox: "c. 95–96 d.C.",
     temaCentral: "Victoria final de Dios y esperanza eterna",
     versiculoClave: "Apocalipsis 21:4",
+    themeIds: ["esperanza", "paz"],
+    characterIds: ["jesus"],
   },
 }
 

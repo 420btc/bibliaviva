@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import useSWR from "swr"
-import { bibleBooks, getAllBooksFlat, type BibleBookLocal } from "@/lib/bible-data"
+import { bibleBooks, characters, getAllBooksFlat, themes, type BibleBookLocal } from "@/lib/bible-data"
 import { getChapter, searchBible, SUPPORTED_VERSIONS, BIBLE_EDITIONS, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -832,6 +832,44 @@ export function BibleReader() {
         )}
       </div>
 
+      {(book.themeIds?.length || book.characterIds?.length) && (
+        <div className="space-y-2">
+          {book.themeIds?.length ? (
+            <div className="flex flex-wrap gap-1.5">
+              {book.themeIds
+                .map((id) => themes.find((t) => t.id === id))
+                .filter(Boolean)
+                .slice(0, 4)
+                .map((t) => (
+                  <span
+                    key={t!.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-wider text-secondary-foreground"
+                  >
+                    {t!.nombre}
+                  </span>
+                ))}
+            </div>
+          ) : null}
+
+          {book.characterIds?.length ? (
+            <div className="flex flex-wrap gap-1.5">
+              {book.characterIds
+                .map((id) => characters.find((c) => c.id === id))
+                .filter(Boolean)
+                .slice(0, 4)
+                .map((c) => (
+                  <span
+                    key={c!.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground border border-border"
+                  >
+                    {c!.nombre}
+                  </span>
+                ))}
+            </div>
+          ) : null}
+        </div>
+      )}
+
       {(book.autor || book.fechaAprox || book.temaCentral || book.versiculoClave) && (
         <div className="space-y-1 text-xs text-muted-foreground">
           {book.autor && (
@@ -975,6 +1013,11 @@ export function BibleReader() {
             <div className="text-center bg-[#fdfbf7] dark:bg-[#000000] z-50 py-6 px-8 border-b border-border/5 shadow-sm shrink-0">
               <h2 className="text-2xl font-serif font-bold text-foreground/80">{selectedBook.nombre}</h2>
               <span className="text-xs text-muted-foreground uppercase tracking-widest pb-2 block">Capítulo {selectedChapter}</span>
+              {(selectedBook.autor || selectedBook.fechaAprox) && (
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider pb-3 block">
+                  {[selectedBook.autor, selectedBook.fechaAprox].filter(Boolean).join(" • ")}
+                </span>
+              )}
               <div className="flex justify-center">
                  <Button variant="outline" size="sm" className="h-6 text-xs bg-muted/50 border-border/50">
                     REINA VALERA 1960
@@ -1090,10 +1133,27 @@ export function BibleReader() {
         aria-hidden={!showTopNav}
       >
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowBookSelector(true)} className="gap-2">
-            <Book className="w-4 h-4" />
-            <span className="font-semibold">{selectedBook.nombre}</span>
-          </Button>
+          <div className="flex items-center gap-1 group">
+            <Button variant="outline" size="sm" onClick={() => setShowBookSelector(true)} className="gap-2">
+              <Book className="w-4 h-4" />
+              <span className="font-semibold">{selectedBook.nombre}</span>
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                  title="Info del libro"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4 z-50 max-h-80 overflow-auto" align="start" side="bottom">
+                <BookInfoPopoverContent book={selectedBook} />
+              </PopoverContent>
+            </Popover>
+          </div>
 
           <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)} title="Buscar">
             <Search className="w-4 h-4" />
