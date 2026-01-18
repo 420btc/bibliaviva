@@ -17,11 +17,60 @@ const OPENAI_MODELS = {
   tts: envOrDefault("OPENAI_TTS_MODEL", "tts-1"),
 }
 
+const FALLBACK_MODELS = {
+  chat: envOrDefault("OPENAI_CHAT_FALLBACK_MODEL", "gpt-4o-mini"),
+  study: envOrDefault("OPENAI_STUDY_FALLBACK_MODEL", "gpt-4o-mini"),
+  geo: envOrDefault("OPENAI_GEO_FALLBACK_MODEL", "gpt-4o-mini"),
+  image: envOrDefault("OPENAI_IMAGE_FALLBACK_MODEL", "dall-e-3"),
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
+function hasOpenAIKey() {
+  const key = process.env.OPENAI_API_KEY
+  return typeof key === "string" && key.trim().length > 0
+}
+
+function getOpenAIErrorMessage(error: unknown) {
+  if (!error || typeof error !== "object") return ""
+  const anyErr = error as { message?: unknown; error?: unknown }
+  if (typeof anyErr.message === "string") return anyErr.message
+  const inner = anyErr.error as { message?: unknown } | undefined
+  if (inner && typeof inner.message === "string") return inner.message
+  return ""
+}
+
+function shouldTryFallbackModel(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const anyErr = error as { status?: unknown; code?: unknown }
+  const status = typeof anyErr.status === "number" ? anyErr.status : undefined
+  if (status && [400, 401, 403, 404].includes(status)) return true
+  const code = typeof anyErr.code === "string" ? anyErr.code : undefined
+  if (code && ["model_not_found", "invalid_api_key", "insufficient_quota"].includes(code)) return true
+  const msg = getOpenAIErrorMessage(error).toLowerCase()
+  return (
+    msg.includes("model") ||
+    msg.includes("not found") ||
+    msg.includes("does not exist") ||
+    msg.includes("doesn't exist") ||
+    msg.includes("access") ||
+    msg.includes("permission") ||
+    msg.includes("insufficient_quota") ||
+    msg.includes("quota") ||
+    msg.includes("api key") ||
+    msg.includes("invalid") ||
+    msg.includes("verification") ||
+    msg.includes("verify")
+  )
+}
+
 export async function generateVerseImage(verseText: string) {
+  if (!hasOpenAIKey()) {
+    throw new Error("OPENAI_API_KEY no está configurada en el servidor.")
+  }
+
   try {
     const response = await openai.images.generate({
       model: OPENAI_MODELS.image,
@@ -43,12 +92,37 @@ export async function generateVerseImage(verseText: string) {
     }
     throw new Error("La respuesta de imagen no contiene datos utilizables")
   } catch (error) {
-    console.error("Error generating image:", error)
-    throw new Error("No se pudo generar la imagen")
+    if (!shouldTryFallbackModel(error) || OPENAI_MODELS.image === FALLBACK_MODELS.image) {
+      console.error("Error generating image:", error)
+      throw new Error("No se pudo generar la imagen")
+    }
+
+    try {
+      const response = await openai.images.generate({
+        model: FALLBACK_MODELS.image,
+        prompt: `Una imagen artística, espiritual y serena que represente este versículo bíblico: "${verseText}". Estilo pintura al óleo suave, luz divina, inspirador. Sin texto.`,
+        n: 1,
+        size: "1024x1024",
+        response_format: "url",
+      })
+
+      if (!response.data || !response.data[0] || !("url" in response.data[0]) || !response.data[0].url) {
+        throw new Error("No se recibió imagen utilizable de OpenAI")
+      }
+
+      return { url: response.data[0].url }
+    } catch (fallbackError) {
+      console.error("Error generating image (fallback):", fallbackError)
+      throw new Error("No se pudo generar la imagen")
+    }
   }
 }
 
 export async function generateVerseAudio(verseText: string, voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "onyx") {
+  if (!hasOpenAIKey()) {
+    throw new Error("OPENAI_API_KEY no está configurada en el servidor.")
+  }
+
   try {
     const mp3 = await openai.audio.speech.create({
       model: OPENAI_MODELS.tts,
@@ -65,6 +139,10 @@ export async function generateVerseAudio(verseText: string, voice: "alloy" | "ec
 }
 
 export async function getGeographicContext(book: string, chapter: number) {
+  if (!hasOpenAIKey()) {
+    return { locations: [], summary: "Falta OPENAI_API_KEY en el servidor." }
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: OPENAI_MODELS.geo,
@@ -105,27 +183,31 @@ export async function getGeographicContext(book: string, chapter: number) {
 }
 
 export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "system"; content: string }[]) {
-  try {
-    const tools = [
-      {
-        type: "function" as const,
-        function: {
-          name: "generate_image",
-          description: "Generar una imagen bíblica o espiritual basada en una descripción. Úsalo cuando el usuario pida explícitamente una imagen, dibujo, pintura o visualización.",
-          parameters: {
-            type: "object",
-            properties: {
-              prompt: {
-                type: "string",
-                description: "Descripción detallada de la imagen a generar."
-              }
-            },
-            required: ["prompt"]
-          }
+  if (!hasOpenAIKey()) {
+    return "No puedo usar la IA ahora: falta OPENAI_API_KEY en el servidor."
+  }
+
+  const tools = [
+    {
+      type: "function" as const,
+      function: {
+        name: "generate_image",
+        description: "Generar una imagen bíblica o espiritual basada en una descripción. Úsalo cuando el usuario pida explícitamente una imagen, dibujo, pintura o visualización.",
+        parameters: {
+          type: "object",
+          properties: {
+            prompt: {
+              type: "string",
+              description: "Descripción detallada de la imagen a generar."
+            }
+          },
+          required: ["prompt"]
         }
       }
-    ];
+    }
+  ];
 
+  try {
     const response = await openai.chat.completions.create({
       model: OPENAI_MODELS.chat,
       messages: [
@@ -155,8 +237,43 @@ export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "
 
     return responseMessage.content || "Lo siento, no pude generar una respuesta en este momento."
   } catch (error) {
-    console.error("Error en chat IA:", error)
-    throw new Error("No se pudo obtener respuesta del asistente")
+    if (!shouldTryFallbackModel(error) || OPENAI_MODELS.chat === FALLBACK_MODELS.chat) {
+      console.error("Error en chat IA:", error)
+      return "No se pudo obtener respuesta del asistente en este momento."
+    }
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: FALLBACK_MODELS.chat,
+        messages: [
+          {
+            role: "system",
+            content: "Eres un asistente bíblico sabio, amable y teológicamente informado. Tu objetivo es ayudar a los usuarios a entender la Biblia, profundizar en su fe y responder preguntas teológicas con precisión y sensibilidad. Usa un lenguaje claro, alentador y respetuoso. Basa tus respuestas en las Escrituras. Si te preguntan algo fuera del contexto bíblico o espiritual, intenta relacionarlo suavemente con principios bíblicos o indica amablemente tu propósito. Si el usuario pide una imagen, usa la función generate_image."
+          },
+          ...messages
+        ],
+        tools: tools,
+        tool_choice: "auto",
+        max_tokens: 1000,
+        temperature: 0.7,
+      })
+
+      const responseMessage = response.choices[0].message;
+
+      if (responseMessage.tool_calls) {
+        const toolCall = responseMessage.tool_calls[0];
+        if (toolCall.type === 'function' && toolCall.function.name === "generate_image") {
+          const args = JSON.parse(toolCall.function.arguments);
+          const imageUrl = await generateVerseImage(args.prompt);
+          return `Aquí tienes la imagen que pediste:\n\n[IMAGE_URL:${imageUrl.url}]`;
+        }
+      }
+
+      return responseMessage.content || "Lo siento, no pude generar una respuesta en este momento."
+    } catch (fallbackError) {
+      console.error("Error en chat IA (fallback):", fallbackError)
+      return "No se pudo obtener respuesta del asistente en este momento."
+    }
   }
 }
 
@@ -198,6 +315,19 @@ export async function studyBiblePassage(input: {
     referencias: "Prioriza referencias cruzadas bíblicas relevantes y justificadas.",
   }
 
+  if (!hasOpenAIKey()) {
+    return {
+      title: reference,
+      resumen: "Falta OPENAI_API_KEY en el servidor.",
+      explicacion: "",
+      puntosClave: [],
+      aplicaciones: [],
+      preguntas: [],
+      referenciasCruzadas: [],
+      oracion: "",
+    } satisfies StudyResponse
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: OPENAI_MODELS.study,
@@ -231,7 +361,64 @@ export async function studyBiblePassage(input: {
     const parsed = JSON.parse(content) as StudyResponse
     return parsed
   } catch (error) {
-    console.error("Error en estudio IA:", error)
-    throw new Error("No se pudo generar el estudio del pasaje")
+    if (!shouldTryFallbackModel(error) || OPENAI_MODELS.study === FALLBACK_MODELS.study) {
+      console.error("Error en estudio IA:", error)
+      return {
+        title: reference,
+        resumen: "No se pudo generar el estudio del pasaje.",
+        explicacion: "",
+        puntosClave: [],
+        aplicaciones: [],
+        preguntas: [],
+        referenciasCruzadas: [],
+        oracion: "",
+      } satisfies StudyResponse
+    }
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: FALLBACK_MODELS.study,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Eres un asistente bíblico experto, sobrio y preciso. Responde en español, sin inventar datos. Si algo es incierto, dilo con cautela. Devuelve SOLO JSON válido con esta estructura exacta: {\"title\":string,\"resumen\":string,\"explicacion\":string,\"puntosClave\":string[],\"aplicaciones\":string[],\"preguntas\":string[],\"referenciasCruzadas\":string[],\"oracion\":string}. Mantén el estilo minimalista: frases cortas, bullets directos, sin relleno.",
+          },
+          {
+            role: "user",
+            content: [
+              `Referencia: ${reference}`,
+              version ? `Versión: ${version}` : null,
+              `Modo: ${mode} (${modeHints[mode]})`,
+              "Texto:",
+              text,
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.4,
+        max_tokens: 900,
+      })
+
+      const content = response.choices[0].message.content
+      if (!content) throw new Error("Respuesta vacía")
+
+      const parsed = JSON.parse(content) as StudyResponse
+      return parsed
+    } catch (fallbackError) {
+      console.error("Error en estudio IA (fallback):", fallbackError)
+      return {
+        title: reference,
+        resumen: "No se pudo generar el estudio del pasaje.",
+        explicacion: "",
+        puntosClave: [],
+        aplicaciones: [],
+        preguntas: [],
+        referenciasCruzadas: [],
+        oracion: "",
+      } satisfies StudyResponse
+    }
   }
 }
