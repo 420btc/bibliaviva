@@ -133,7 +133,9 @@ export function VerseOfDay() {
     try {
       setIsPlaying(true)
       if (!audioUrl) {
-        const { audio } = await generateVerseAudio(`${verse.libro} ${verse.capitulo} versículo ${verse.versiculo}. ${verse.texto}`)
+        const res = await generateVerseAudio(`${verse.libro} ${verse.capitulo} versículo ${verse.versiculo}. ${verse.texto}`)
+        if (!res.audio) throw new Error(res.error || "No se pudo generar el audio")
+        const { audio } = res
         const url = `data:audio/mp3;base64,${audio}`
         setAudioUrl(url)
         addXP(5)
@@ -183,8 +185,12 @@ export function VerseOfDay() {
 
     try {
       setIsGeneratingImage(true)
-      const { url } = await generateVerseImage(`${verse.texto} (${verse.libro} ${verse.capitulo}:${verse.versiculo})`)
-      setGeneratedImage(url || null)
+      const res = await generateVerseImage(`${verse.texto} (${verse.libro} ${verse.capitulo}:${verse.versiculo})`)
+      if (!res.url) {
+        toast.error(res.error || "No se pudo generar la imagen. Inténtalo de nuevo.")
+        return
+      }
+      setGeneratedImage(res.url)
       addXP(15)
       
       // Actualizar contador

@@ -48,8 +48,10 @@ import { generateVerseAudio, studyBiblePassage, type StudyMode, type StudyRespon
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth-provider"
 import { saveBookmarkAction } from "@/actions/bookmarks"
-import { saveProgressAction, getProgressAction, markChapterAsReadAction } from "@/actions/progress"
+import { saveProgressAction, getProgressAction, markChapterAsReadAction, getChapterCompletionAction } from "@/actions/progress"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { formatDistanceToNowStrict } from "date-fns"
+import { es } from "date-fns/locale"
 import {
   Select,
   SelectContent,
@@ -93,6 +95,8 @@ const fetcher = async ([bookId, chapter, version]: [string, number, string]): Pr
   return getChapter(bookId, chapter, version)
 }
 
+const studyCacheGlobal = new Map<string, StudyResponse>()
+
 export function BibleReader() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
@@ -123,10 +127,21 @@ export function BibleReader() {
   const [studyResult, setStudyResult] = useState<StudyResponse | null>(null)
   const [isStudyLoading, setIsStudyLoading] = useState(false)
   const [studyLastKey, setStudyLastKey] = useState<string | null>(null)
+  const studyCacheRef = useRef<Map<string, StudyResponse>>(studyCacheGlobal)
 
   const [isNotesOpen, setIsNotesOpen] = useState(false)
   const [noteText, setNoteText] = useState("")
   const [noteKey, setNoteKey] = useState("")
+
+  const [isMarkingRead, setIsMarkingRead] = useState(false)
+  const [chapterCompletedAt, setChapterCompletedAt] = useState<string | null>(null)
+  const isChapterRead = Boolean(chapterCompletedAt)
+  const chapterReadAgo = useMemo(() => {
+    if (!chapterCompletedAt) return null
+    const d = new Date(chapterCompletedAt)
+    if (isNaN(d.getTime())) return null
+    return formatDistanceToNowStrict(d, { addSuffix: true, locale: es })
+  }, [chapterCompletedAt])
 
   // Efecto para cargar libro/capítulo desde URL o DB/LocalStorage
   useEffect(() => {
@@ -202,6 +217,30 @@ export function BibleReader() {
     }
     loadInitialState()
   }, [searchParams, user])
+
+  useEffect(() => {
+    let cancelled = false
+    setIsMarkingRead(false)
+    setChapterCompletedAt(null)
+
+    const loadCompletion = async () => {
+      if (!user?.id) return
+      try {
+        const res = await getChapterCompletionAction(user.id, selectedBook.id, selectedChapter)
+        if (cancelled) return
+        const completedAt = res.success ? (res.completedAt as any) : null
+        setChapterCompletedAt(completedAt ? new Date(completedAt).toISOString() : null)
+      } catch (e) {
+        if (!cancelled) setChapterCompletedAt(null)
+        console.error("Error loading chapter completion", e)
+      }
+    }
+
+    void loadCompletion()
+    return () => {
+      cancelled = true
+    }
+  }, [user?.id, selectedBook.id, selectedChapter])
 
   useEffect(() => {
     isZenReadingRef.current = isZenReading
@@ -545,7 +584,13 @@ export function BibleReader() {
       let url = audioCache[cacheKey]
 
       if (!url) {
-        const { audio } = await generateVerseAudio(verse.verse, currentVoice)
+        const res = await generateVerseAudio(verse.verse, currentVoice)
+        if (!res.audio) {
+          toast.error(res.error || "No se pudo generar el audio")
+          stopAudio()
+          return
+        }
+        const { audio } = res
         url = `data:audio/mp3;base64,${audio}`
         setAudioCache(prev => ({ ...prev, [cacheKey]: url }))
       }
@@ -756,6 +801,13 @@ export function BibleReader() {
 
     setIsStudyOpen(true)
     setStudyMode(mode)
+    const cached = studyCacheRef.current.get(key)
+    if (cached) {
+      setStudyResult(cached)
+      setStudyLastKey(key)
+      return
+    }
+
     if (studyLastKey === key && studyResult) return
 
     setIsStudyLoading(true)
@@ -768,6 +820,7 @@ export function BibleReader() {
       })
       setStudyResult(res)
       setStudyLastKey(key)
+      studyCacheRef.current.set(key, res)
     } catch (e) {
       toast.error("No se pudo generar el estudio con IA")
     } finally {
@@ -886,23 +939,35 @@ export function BibleReader() {
 
   // Marcar como leído
   const markAsRead = async () => {
-    // Optimistic UI update
-    toast.success(`Leído: ${selectedBook.nombre} ${selectedChapter}`, {
-      description: "¡Excelente progreso! Continúa así."
-    })
-    
-    // Update local context
-    addXP(15) 
-    incrementChapters()
-    completeChallenge('lectura-diaria', 100)
+    if (!user?.id) {
+      toast.error("Inicia sesión para guardar tu lectura.")
+      return
+    }
+    if (isMarkingRead || isChapterRead) return
 
-    // Persist to DB
-    if (user?.id) {
-      try {
-        await markChapterAsReadAction(user.id, selectedBook.id, selectedChapter)
-      } catch (error) {
-        console.error("Failed to mark as read in DB", error)
+    setIsMarkingRead(true)
+    try {
+      const res = await markChapterAsReadAction(user.id, selectedBook.id, selectedChapter)
+      if (!res?.success) {
+        toast.error("No se pudo guardar como leído.")
+        return
       }
+
+      const completedAtIso = res.completedAt ? new Date(res.completedAt as any).toISOString() : new Date().toISOString()
+      setChapterCompletedAt(completedAtIso)
+
+      toast.success(`Leído: ${selectedBook.nombre} ${selectedChapter}`, {
+        description: "Guardado correctamente."
+      })
+
+      addXP(15)
+      incrementChapters()
+      completeChallenge("lectura-diaria", 100)
+    } catch (error) {
+      console.error("Failed to mark as read in DB", error)
+      toast.error("No se pudo guardar como leído.")
+    } finally {
+      setIsMarkingRead(false)
     }
   }
 
@@ -1990,8 +2055,12 @@ export function BibleReader() {
                   variant="ghost"
                   size="icon"
                   onClick={markAsRead}
-                  className="w-7 h-7 rounded-full hover:bg-green-500/10 hover:text-green-500 transition-colors"
-                  title="Marcar como leído"
+                  disabled={isMarkingRead || isChapterRead}
+                  className={cn(
+                    "w-7 h-7 rounded-full transition-colors",
+                    isChapterRead ? "text-green-600" : "hover:bg-green-500/10 hover:text-green-500"
+                  )}
+                  title={isChapterRead ? "Leído" : "Marcar como leído"}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 </Button>
@@ -2148,12 +2217,25 @@ export function BibleReader() {
               {/* Controles de navegación (Shared) */}
               <div className={cn("flex flex-col gap-4 mt-12 pt-8 border-t border-border col-span-full")}>
                 <Button 
-                  className="w-full md:w-auto mx-auto gap-2 shadow-sm bg-zinc-200 text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-700 transition-all"
+                  className={cn(
+                    "w-full md:w-auto mx-auto gap-2 shadow-sm border transition-all",
+                    isChapterRead
+                      ? "bg-green-500/10 text-green-700 hover:bg-green-500/15 dark:bg-green-500/10 dark:text-green-300 border-green-500/30"
+                      : "bg-zinc-200 text-zinc-800 hover:bg-zinc-300 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-700"
+                  )}
                   size="default"
                   onClick={markAsRead}
+                  disabled={isMarkingRead || isChapterRead}
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span className="font-medium tracking-wide text-xs uppercase">Marcar como leído</span>
+                  <CheckCircle2 className={cn("w-4 h-4", isChapterRead && "text-green-600 dark:text-green-400")} />
+                  <span className="font-medium tracking-wide text-xs uppercase">
+                    {isChapterRead ? "Leído" : isMarkingRead ? "Guardando…" : "Marcar como leído"}
+                  </span>
+                  {isChapterRead && chapterReadAgo ? (
+                    <span className="text-[10px] font-medium text-green-700/80 dark:text-green-300/80">
+                      {chapterReadAgo}
+                    </span>
+                  ) : null}
                 </Button>
 
                 <div className="flex justify-between w-full">

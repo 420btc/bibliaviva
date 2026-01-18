@@ -32,11 +32,12 @@ export async function markChapterAsReadAction(userId: string, bookId: string, ch
     // Vamos a intentar guardar en una tabla 'completed_chapters' si existe, o fallar silenciosamente si no.
     // Pero lo más importante es actualizar el contador global.
 
-    await sql`
+    const rows = await sql`
       INSERT INTO completed_chapters (user_id, book_id, chapter, completed_at)
       VALUES (${userId}, ${bookId}, ${chapter}, CURRENT_TIMESTAMP)
       ON CONFLICT (user_id, book_id, chapter) DO UPDATE SET
         completed_at = CURRENT_TIMESTAMP
+      RETURNING completed_at
     `;
 
     // 2. Añadir puntos de luz para la mascota virtual
@@ -47,11 +48,34 @@ export async function markChapterAsReadAction(userId: string, bookId: string, ch
       console.error('Error adding light points to pet:', petError);
     }
 
-    return { success: true, lightPointsAdded: PET_CONFIG.POINTS_PER_CHAPTER };
+    return {
+      success: true,
+      lightPointsAdded: PET_CONFIG.POINTS_PER_CHAPTER,
+      completedAt: rows?.[0]?.completed_at ?? null
+    };
   } catch (error) {
     console.error('Error marking chapter as read:', error);
     // Si falla porque la tabla no existe, al menos intentamos actualizar el progreso global
     return { success: false, error: 'Failed to mark chapter' };
+  }
+}
+
+export async function getChapterCompletionAction(userId: string, bookId: string, chapter: number) {
+  try {
+    const rows = await sql`
+      SELECT completed_at
+      FROM completed_chapters
+      WHERE user_id = ${userId} AND book_id = ${bookId} AND chapter = ${chapter}
+      LIMIT 1
+    `;
+
+    return {
+      success: true,
+      completedAt: rows?.[0]?.completed_at ?? null
+    }
+  } catch (error) {
+    console.error('Error fetching chapter completion:', error);
+    return { success: false, error: 'Failed to fetch completion', completedAt: null };
   }
 }
 

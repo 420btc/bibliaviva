@@ -41,6 +41,17 @@ export async function migrate() {
     `;
     console.log('Created reading_progress table');
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS completed_chapters (
+        user_id TEXT NOT NULL,
+        book_id TEXT NOT NULL,
+        chapter INTEGER NOT NULL,
+        completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, book_id, chapter)
+      );
+    `;
+    console.log('Created completed_chapters table');
+
     // Table: user_gamification
     await sql`
       CREATE TABLE IF NOT EXISTS user_gamification (

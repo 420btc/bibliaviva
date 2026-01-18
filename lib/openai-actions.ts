@@ -1,7 +1,5 @@
 "use server"
 
-import OpenAI from "openai"
-
 function envOrDefault(name: string, fallback: string) {
   const value = process.env[name]
   if (!value) return fallback
@@ -24,9 +22,15 @@ const FALLBACK_MODELS = {
   image: envOrDefault("OPENAI_IMAGE_FALLBACK_MODEL", "dall-e-3"),
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+let openaiClient: unknown | null = null
+
+async function getOpenAIClient() {
+  if (openaiClient) return openaiClient as any
+  const mod = await import("openai")
+  const OpenAI = (mod as any).default
+  openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  return openaiClient as any
+}
 
 function hasOpenAIKey() {
   const key = process.env.OPENAI_API_KEY
@@ -68,10 +72,11 @@ function shouldTryFallbackModel(error: unknown) {
 
 export async function generateVerseImage(verseText: string) {
   if (!hasOpenAIKey()) {
-    throw new Error("OPENAI_API_KEY no está configurada en el servidor.")
+    return { url: null, error: "OPENAI_API_KEY no está configurada en el servidor." }
   }
 
   try {
+    const openai = await getOpenAIClient()
     const response = await openai.images.generate({
       model: OPENAI_MODELS.image,
       prompt: `Una imagen artística, espiritual y serena que represente este versículo bíblico: "${verseText}". Estilo pintura al óleo suave, luz divina, inspirador. Sin texto.`,
@@ -80,7 +85,7 @@ export async function generateVerseImage(verseText: string) {
     })
 
     if (!response.data || !response.data[0]) {
-      throw new Error("No se recibió imagen de OpenAI")
+      return { url: null, error: "No se recibió imagen de OpenAI" }
     }
 
     const first = response.data[0]
@@ -90,14 +95,15 @@ export async function generateVerseImage(verseText: string) {
     if ("url" in first && first.url) {
       return { url: first.url }
     }
-    throw new Error("La respuesta de imagen no contiene datos utilizables")
+    return { url: null, error: "La respuesta de imagen no contiene datos utilizables" }
   } catch (error) {
     if (!shouldTryFallbackModel(error) || OPENAI_MODELS.image === FALLBACK_MODELS.image) {
       console.error("Error generating image:", error)
-      throw new Error("No se pudo generar la imagen")
+      return { url: null, error: "No se pudo generar la imagen" }
     }
 
     try {
+      const openai = await getOpenAIClient()
       const response = await openai.images.generate({
         model: FALLBACK_MODELS.image,
         prompt: `Una imagen artística, espiritual y serena que represente este versículo bíblico: "${verseText}". Estilo pintura al óleo suave, luz divina, inspirador. Sin texto.`,
@@ -107,23 +113,24 @@ export async function generateVerseImage(verseText: string) {
       })
 
       if (!response.data || !response.data[0] || !("url" in response.data[0]) || !response.data[0].url) {
-        throw new Error("No se recibió imagen utilizable de OpenAI")
+        return { url: null, error: "No se recibió imagen utilizable de OpenAI" }
       }
 
       return { url: response.data[0].url }
     } catch (fallbackError) {
       console.error("Error generating image (fallback):", fallbackError)
-      throw new Error("No se pudo generar la imagen")
+      return { url: null, error: "No se pudo generar la imagen" }
     }
   }
 }
 
 export async function generateVerseAudio(verseText: string, voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer" = "onyx") {
   if (!hasOpenAIKey()) {
-    throw new Error("OPENAI_API_KEY no está configurada en el servidor.")
+    return { audio: null, error: "OPENAI_API_KEY no está configurada en el servidor." }
   }
 
   try {
+    const openai = await getOpenAIClient()
     const mp3 = await openai.audio.speech.create({
       model: OPENAI_MODELS.tts,
       voice: voice,
@@ -134,7 +141,7 @@ export async function generateVerseAudio(verseText: string, voice: "alloy" | "ec
     return { audio: buffer.toString("base64") }
   } catch (error) {
     console.error("Error generating audio:", error)
-    throw new Error("No se pudo generar el audio")
+    return { audio: null, error: "No se pudo generar el audio" }
   }
 }
 
@@ -144,6 +151,7 @@ export async function getGeographicContext(book: string, chapter: number) {
   }
 
   try {
+    const openai = await getOpenAIClient()
     const response = await openai.chat.completions.create({
       model: OPENAI_MODELS.geo,
       messages: [
@@ -208,6 +216,7 @@ export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "
   ];
 
   try {
+    const openai = await getOpenAIClient()
     const response = await openai.chat.completions.create({
       model: OPENAI_MODELS.chat,
       messages: [
@@ -230,8 +239,9 @@ export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "
       const toolCall = responseMessage.tool_calls[0];
       if (toolCall.type === 'function' && toolCall.function.name === "generate_image") {
         const args = JSON.parse(toolCall.function.arguments);
-        const imageUrl = await generateVerseImage(args.prompt); // Reusing existing function which returns { url }
-        return `Aquí tienes la imagen que pediste:\n\n[IMAGE_URL:${imageUrl.url}]`;
+        const image = await generateVerseImage(args.prompt);
+        if (!image.url) return "No se pudo generar la imagen en este momento."
+        return `Aquí tienes la imagen que pediste:\n\n[IMAGE_URL:${image.url}]`;
       }
     }
 
@@ -243,6 +253,7 @@ export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "
     }
 
     try {
+      const openai = await getOpenAIClient()
       const response = await openai.chat.completions.create({
         model: FALLBACK_MODELS.chat,
         messages: [
@@ -264,8 +275,9 @@ export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "
         const toolCall = responseMessage.tool_calls[0];
         if (toolCall.type === 'function' && toolCall.function.name === "generate_image") {
           const args = JSON.parse(toolCall.function.arguments);
-          const imageUrl = await generateVerseImage(args.prompt);
-          return `Aquí tienes la imagen que pediste:\n\n[IMAGE_URL:${imageUrl.url}]`;
+          const image = await generateVerseImage(args.prompt);
+          if (!image.url) return "No se pudo generar la imagen en este momento."
+          return `Aquí tienes la imagen que pediste:\n\n[IMAGE_URL:${image.url}]`;
         }
       }
 
@@ -329,6 +341,7 @@ export async function studyBiblePassage(input: {
   }
 
   try {
+    const openai = await getOpenAIClient()
     const response = await openai.chat.completions.create({
       model: OPENAI_MODELS.study,
       messages: [
@@ -376,6 +389,7 @@ export async function studyBiblePassage(input: {
     }
 
     try {
+      const openai = await getOpenAIClient()
       const response = await openai.chat.completions.create({
         model: FALLBACK_MODELS.study,
         messages: [
