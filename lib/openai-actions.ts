@@ -13,6 +13,7 @@ const OPENAI_MODELS = {
   geo: envOrDefault("OPENAI_GEO_MODEL", "gpt-5-nano"),
   image: envOrDefault("OPENAI_IMAGE_MODEL", "gpt-image-1-mini"),
   tts: envOrDefault("OPENAI_TTS_MODEL", "tts-1"),
+  transcribe: envOrDefault("OPENAI_TRANSCRIBE_MODEL", "whisper-1"),
 }
 
 const FALLBACK_MODELS = {
@@ -20,6 +21,7 @@ const FALLBACK_MODELS = {
   study: envOrDefault("OPENAI_STUDY_FALLBACK_MODEL", "gpt-4o-mini"),
   geo: envOrDefault("OPENAI_GEO_FALLBACK_MODEL", "gpt-4o-mini"),
   image: envOrDefault("OPENAI_IMAGE_FALLBACK_MODEL", "dall-e-3"),
+  transcribe: envOrDefault("OPENAI_TRANSCRIBE_FALLBACK_MODEL", "whisper-1"),
 }
 
 let openaiClient: unknown | null = null
@@ -142,6 +144,45 @@ export async function generateVerseAudio(verseText: string, voice: "alloy" | "ec
   } catch (error) {
     console.error("Error generating audio:", error)
     return { audio: null, error: "No se pudo generar el audio" }
+  }
+}
+
+export async function transcribeAudio(formData: FormData) {
+  if (!hasOpenAIKey()) {
+    return { text: null, error: "OPENAI_API_KEY no está configurada en el servidor." }
+  }
+
+  const file = formData.get("audio")
+  if (!file || !(file instanceof File)) {
+    return { text: null, error: "Audio no válido." }
+  }
+
+  try {
+    const openai = await getOpenAIClient()
+    const res = await openai.audio.transcriptions.create({
+      model: OPENAI_MODELS.transcribe,
+      file,
+    })
+    const text = typeof res?.text === "string" ? res.text.trim() : ""
+    return { text: text.length ? text : null }
+  } catch (error) {
+    if (!shouldTryFallbackModel(error) || OPENAI_MODELS.transcribe === FALLBACK_MODELS.transcribe) {
+      console.error("Error transcribing audio:", error)
+      return { text: null, error: "No se pudo transcribir el audio" }
+    }
+
+    try {
+      const openai = await getOpenAIClient()
+      const res = await openai.audio.transcriptions.create({
+        model: FALLBACK_MODELS.transcribe,
+        file,
+      })
+      const text = typeof res?.text === "string" ? res.text.trim() : ""
+      return { text: text.length ? text : null }
+    } catch (fallbackError) {
+      console.error("Error transcribing audio (fallback):", fallbackError)
+      return { text: null, error: "No se pudo transcribir el audio" }
+    }
   }
 }
 
