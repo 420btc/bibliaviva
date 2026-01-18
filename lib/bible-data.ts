@@ -7,6 +7,10 @@ export interface BibleBookLocal {
   abreviatura: string
   resumen?: string
   categoria?: string
+  autor?: string
+  fechaAprox?: string
+  temaCentral?: string
+  versiculoClave?: string
 }
 
 export const bibleBooks = {
@@ -543,6 +547,416 @@ export const bibleBooks = {
     },
   ] as BibleBookLocal[],
 }
+
+const bookDetailsById: Record<
+  string,
+  Partial<Pick<BibleBookLocal, "autor" | "fechaAprox" | "temaCentral" | "versiculoClave">>
+> = {
+  genesis: {
+    autor: "Moisés (tradicional)",
+    fechaAprox: "c. 1446–1406 a.C.",
+    temaCentral: "Orígenes, caída, pacto y promesa",
+    versiculoClave: "Génesis 12:2-3",
+  },
+  exodo: {
+    autor: "Moisés (tradicional)",
+    fechaAprox: "c. 1446–1406 a.C.",
+    temaCentral: "Redención, pacto y presencia de Dios",
+    versiculoClave: "Éxodo 20:2-3",
+  },
+  levitico: {
+    autor: "Moisés (tradicional)",
+    fechaAprox: "c. 1446–1406 a.C.",
+    temaCentral: "Santidad, adoración y vida consagrada",
+    versiculoClave: "Levítico 19:2",
+  },
+  numeros: {
+    autor: "Moisés (tradicional)",
+    fechaAprox: "c. 1446–1406 a.C.",
+    temaCentral: "Peregrinación, disciplina y fidelidad divina",
+    versiculoClave: "Números 6:24-26",
+  },
+  deuteronomio: {
+    autor: "Moisés (tradicional)",
+    fechaAprox: "c. 1406 a.C.",
+    temaCentral: "Renovación del pacto y llamado a obedecer",
+    versiculoClave: "Deuteronomio 6:4-5",
+  },
+  josue: {
+    autor: "Josué (tradicional) y compiladores",
+    fechaAprox: "c. 1400–1370 a.C.",
+    temaCentral: "Conquista, herencia y fidelidad al pacto",
+    versiculoClave: "Josué 1:9",
+  },
+  jueces: {
+    autor: "Samuel (tradicional) y compiladores",
+    fechaAprox: "c. 1050–1000 a.C.",
+    temaCentral: "Ciclos de apostasía, juicio y liberación",
+    versiculoClave: "Jueces 21:25",
+  },
+  rut: {
+    autor: "Samuel (tradicional)",
+    fechaAprox: "c. 1000 a.C.",
+    temaCentral: "Lealtad, providencia y redención",
+    versiculoClave: "Rut 1:16-17",
+  },
+  "1-samuel": {
+    autor: "Samuel, Natán y Gad (tradicional)",
+    fechaAprox: "c. 930 a.C.",
+    temaCentral: "Transición a la monarquía y elección del rey",
+    versiculoClave: "1 Samuel 16:7",
+  },
+  "2-samuel": {
+    autor: "Natán y Gad (tradicional) y compiladores",
+    fechaAprox: "c. 930 a.C.",
+    temaCentral: "Reinado de David y pacto davídico",
+    versiculoClave: "2 Samuel 7:16",
+  },
+  "1-reyes": {
+    autor: "Compiladores (tradicional: Jeremías)",
+    fechaAprox: "c. 560–540 a.C.",
+    temaCentral: "Reino, idolatría y división",
+    versiculoClave: "1 Reyes 8:61",
+  },
+  "2-reyes": {
+    autor: "Compiladores (tradicional: Jeremías)",
+    fechaAprox: "c. 560–540 a.C.",
+    temaCentral: "Caída de Israel y Judá; exilio",
+    versiculoClave: "2 Reyes 17:13",
+  },
+  "1-cronicas": {
+    autor: "Esdras (tradicional) y cronistas",
+    fechaAprox: "c. 450–400 a.C.",
+    temaCentral: "Linaje, adoración y enfoque en David",
+    versiculoClave: "1 Crónicas 16:34",
+  },
+  "2-cronicas": {
+    autor: "Esdras (tradicional) y cronistas",
+    fechaAprox: "c. 450–400 a.C.",
+    temaCentral: "Templo, reformas y fidelidad del reino de Judá",
+    versiculoClave: "2 Crónicas 7:14",
+  },
+  esdras: {
+    autor: "Esdras (tradicional) y compiladores",
+    fechaAprox: "c. 440 a.C.",
+    temaCentral: "Restauración, templo y Palabra",
+    versiculoClave: "Esdras 7:10",
+  },
+  nehemias: {
+    autor: "Nehemías (memorias) y compiladores",
+    fechaAprox: "c. 430 a.C.",
+    temaCentral: "Reconstrucción y renovación del pueblo",
+    versiculoClave: "Nehemías 8:10",
+  },
+  ester: {
+    autor: "Autor desconocido",
+    fechaAprox: "c. 480–460 a.C.",
+    temaCentral: "Providencia, valentía y preservación",
+    versiculoClave: "Ester 4:14",
+  },
+  job: {
+    autor: "Autor desconocido",
+    fechaAprox: "época antigua (fecha incierta)",
+    temaCentral: "Sufrimiento, justicia y soberanía divina",
+    versiculoClave: "Job 19:25",
+  },
+  salmos: {
+    autor: "David y otros",
+    fechaAprox: "c. 1000–400 a.C.",
+    temaCentral: "Adoración, oración y vida delante de Dios",
+    versiculoClave: "Salmos 23:1",
+  },
+  proverbios: {
+    autor: "Salomón y otros",
+    fechaAprox: "c. 950–700 a.C.",
+    temaCentral: "Sabiduría práctica para una vida temerosa de Dios",
+    versiculoClave: "Proverbios 1:7",
+  },
+  eclesiastes: {
+    autor: "Salomón (tradicional)",
+    fechaAprox: "c. 935 a.C. (tradicional)",
+    temaCentral: "El sentido de la vida bajo el sol",
+    versiculoClave: "Eclesiastés 12:13",
+  },
+  cantares: {
+    autor: "Salomón (tradicional)",
+    fechaAprox: "c. 950 a.C. (tradicional)",
+    temaCentral: "Amor, compromiso y deleite",
+    versiculoClave: "Cantares 8:7",
+  },
+  isaias: {
+    autor: "Isaías",
+    fechaAprox: "c. 740–680 a.C.",
+    temaCentral: "Santidad, juicio y esperanza mesiánica",
+    versiculoClave: "Isaías 53:5",
+  },
+  jeremias: {
+    autor: "Jeremías",
+    fechaAprox: "c. 626–586 a.C.",
+    temaCentral: "Llamado al arrepentimiento y promesa del Nuevo Pacto",
+    versiculoClave: "Jeremías 31:33",
+  },
+  lamentaciones: {
+    autor: "Jeremías (tradicional)",
+    fechaAprox: "c. 586 a.C.",
+    temaCentral: "Dolor por la caída y esperanza en la misericordia",
+    versiculoClave: "Lamentaciones 3:22-23",
+  },
+  ezequiel: {
+    autor: "Ezequiel",
+    fechaAprox: "c. 593–571 a.C.",
+    temaCentral: "Gloria de Dios, juicio y restauración",
+    versiculoClave: "Ezequiel 36:26",
+  },
+  daniel: {
+    autor: "Daniel (tradicional)",
+    fechaAprox: "c. 605–536 a.C.",
+    temaCentral: "Fidelidad en el exilio y reino eterno",
+    versiculoClave: "Daniel 2:44",
+  },
+  oseas: {
+    autor: "Oseas",
+    fechaAprox: "c. 755–715 a.C.",
+    temaCentral: "Amor fiel de Dios ante la infidelidad",
+    versiculoClave: "Oseas 6:6",
+  },
+  joel: {
+    autor: "Joel",
+    fechaAprox: "fecha discutida (aprox.)",
+    temaCentral: "Día del Señor y derramamiento del Espíritu",
+    versiculoClave: "Joel 2:28-29",
+  },
+  amos: {
+    autor: "Amós",
+    fechaAprox: "c. 760 a.C.",
+    temaCentral: "Justicia, integridad y juicio",
+    versiculoClave: "Amós 5:24",
+  },
+  abdias: {
+    autor: "Abdías",
+    fechaAprox: "c. 586 a.C. (aprox.)",
+    temaCentral: "Juicio por orgullo y violencia",
+    versiculoClave: "Abdías 1:15",
+  },
+  jonas: {
+    autor: "Autor desconocido (relato sobre Jonás)",
+    fechaAprox: "c. 760–700 a.C. (acontecimientos) / redacción posterior",
+    temaCentral: "Misericordia de Dios y llamado al arrepentimiento",
+    versiculoClave: "Jonás 4:2",
+  },
+  miqueas: {
+    autor: "Miqueas",
+    fechaAprox: "c. 735–700 a.C.",
+    temaCentral: "Justicia, misericordia y esperanza mesiánica",
+    versiculoClave: "Miqueas 6:8",
+  },
+  nahum: {
+    autor: "Nahúm",
+    fechaAprox: "c. 650–630 a.C.",
+    temaCentral: "Juicio de Dios sobre la opresión",
+    versiculoClave: "Nahúm 1:7",
+  },
+  habacuc: {
+    autor: "Habacuc",
+    fechaAprox: "c. 612–589 a.C.",
+    temaCentral: "Vivir por fe en medio de la injusticia",
+    versiculoClave: "Habacuc 2:4",
+  },
+  sofonias: {
+    autor: "Sofonías",
+    fechaAprox: "c. 640–609 a.C.",
+    temaCentral: "Día del Señor, juicio y restauración",
+    versiculoClave: "Sofonías 3:17",
+  },
+  hageo: {
+    autor: "Hageo",
+    fechaAprox: "520 a.C.",
+    temaCentral: "Priorizar la casa de Dios",
+    versiculoClave: "Hageo 1:8",
+  },
+  zacarias: {
+    autor: "Zacarías",
+    fechaAprox: "c. 520–518 a.C.",
+    temaCentral: "Esperanza, santidad y promesas mesiánicas",
+    versiculoClave: "Zacarías 9:9",
+  },
+  malaquias: {
+    autor: "Malaquías",
+    fechaAprox: "c. 430 a.C.",
+    temaCentral: "Fidelidad a Dios y adoración sincera",
+    versiculoClave: "Malaquías 3:10",
+  },
+  mateo: {
+    autor: "Mateo (tradicional)",
+    fechaAprox: "c. 60–70 d.C.",
+    temaCentral: "Jesús como el Mesías Rey",
+    versiculoClave: "Mateo 5:17",
+  },
+  marcos: {
+    autor: "Marcos (tradicional)",
+    fechaAprox: "c. 55–65 d.C.",
+    temaCentral: "Jesús Siervo; acción y discipulado",
+    versiculoClave: "Marcos 10:45",
+  },
+  lucas: {
+    autor: "Lucas",
+    fechaAprox: "c. 60–62 d.C.",
+    temaCentral: "Salvación para todos; compasión y misión",
+    versiculoClave: "Lucas 19:10",
+  },
+  juan: {
+    autor: "Juan (tradicional)",
+    fechaAprox: "c. 85–95 d.C.",
+    temaCentral: "Creer en Jesús y tener vida",
+    versiculoClave: "Juan 20:31",
+  },
+  hechos: {
+    autor: "Lucas",
+    fechaAprox: "c. 62–70 d.C.",
+    temaCentral: "Expansión del Evangelio por el Espíritu",
+    versiculoClave: "Hechos 1:8",
+  },
+  romanos: {
+    autor: "Pablo",
+    fechaAprox: "c. 57 d.C.",
+    temaCentral: "El Evangelio y la justicia por fe",
+    versiculoClave: "Romanos 1:16-17",
+  },
+  "1-corintios": {
+    autor: "Pablo",
+    fechaAprox: "c. 55 d.C.",
+    temaCentral: "Vida de iglesia, santidad y amor",
+    versiculoClave: "1 Corintios 13:13",
+  },
+  "2-corintios": {
+    autor: "Pablo",
+    fechaAprox: "c. 56 d.C.",
+    temaCentral: "Consolación y poder en la debilidad",
+    versiculoClave: "2 Corintios 12:9",
+  },
+  galatas: {
+    autor: "Pablo",
+    fechaAprox: "c. 49–55 d.C.",
+    temaCentral: "Libertad en Cristo frente al legalismo",
+    versiculoClave: "Gálatas 2:20",
+  },
+  efesios: {
+    autor: "Pablo",
+    fechaAprox: "c. 60–62 d.C.",
+    temaCentral: "Identidad en Cristo y unidad de la iglesia",
+    versiculoClave: "Efesios 2:8-10",
+  },
+  filipenses: {
+    autor: "Pablo",
+    fechaAprox: "c. 60–62 d.C.",
+    temaCentral: "Gozo y perseverancia en Cristo",
+    versiculoClave: "Filipenses 4:4",
+  },
+  colosenses: {
+    autor: "Pablo",
+    fechaAprox: "c. 60–62 d.C.",
+    temaCentral: "Supremacía y suficiencia de Cristo",
+    versiculoClave: "Colosenses 1:16-17",
+  },
+  "1-tesalonicenses": {
+    autor: "Pablo",
+    fechaAprox: "c. 50–51 d.C.",
+    temaCentral: "Santidad, ánimo y esperanza futura",
+    versiculoClave: "1 Tesalonicenses 4:16-17",
+  },
+  "2-tesalonicenses": {
+    autor: "Pablo",
+    fechaAprox: "c. 51–52 d.C.",
+    temaCentral: "Perseverancia y corrección sobre el fin",
+    versiculoClave: "2 Tesalonicenses 3:5",
+  },
+  "1-timoteo": {
+    autor: "Pablo",
+    fechaAprox: "c. 62–64 d.C.",
+    temaCentral: "Doctrina sana y liderazgo piadoso",
+    versiculoClave: "1 Timoteo 4:12",
+  },
+  "2-timoteo": {
+    autor: "Pablo",
+    fechaAprox: "c. 66–67 d.C.",
+    temaCentral: "Fidelidad a la Palabra hasta el final",
+    versiculoClave: "2 Timoteo 3:16-17",
+  },
+  tito: {
+    autor: "Pablo",
+    fechaAprox: "c. 63–65 d.C.",
+    temaCentral: "Sana doctrina que produce buenas obras",
+    versiculoClave: "Tito 2:11-12",
+  },
+  filemon: {
+    autor: "Pablo",
+    fechaAprox: "c. 60–62 d.C.",
+    temaCentral: "Perdón, reconciliación y nueva identidad",
+    versiculoClave: "Filemón 1:16",
+  },
+  hebreos: {
+    autor: "Autor desconocido",
+    fechaAprox: "c. 60–70 d.C.",
+    temaCentral: "Superioridad de Cristo y perseverancia en la fe",
+    versiculoClave: "Hebreos 4:14-16",
+  },
+  santiago: {
+    autor: "Santiago",
+    fechaAprox: "c. 45–49 d.C.",
+    temaCentral: "Fe práctica y vida transformada",
+    versiculoClave: "Santiago 1:22",
+  },
+  "1-pedro": {
+    autor: "Pedro",
+    fechaAprox: "c. 62–64 d.C.",
+    temaCentral: "Esperanza viva en medio del sufrimiento",
+    versiculoClave: "1 Pedro 1:3",
+  },
+  "2-pedro": {
+    autor: "Pedro (tradicional)",
+    fechaAprox: "c. 64–68 d.C.",
+    temaCentral: "Crecimiento espiritual y alerta ante el error",
+    versiculoClave: "2 Pedro 3:9",
+  },
+  "1-juan": {
+    autor: "Juan (tradicional)",
+    fechaAprox: "c. 85–95 d.C.",
+    temaCentral: "Certeza de la fe, amor y verdad",
+    versiculoClave: "1 Juan 4:7-8",
+  },
+  "2-juan": {
+    autor: "Juan (tradicional)",
+    fechaAprox: "c. 85–95 d.C.",
+    temaCentral: "Caminar en verdad y amor",
+    versiculoClave: "2 Juan 1:6",
+  },
+  "3-juan": {
+    autor: "Juan (tradicional)",
+    fechaAprox: "c. 85–95 d.C.",
+    temaCentral: "Hospitalidad y testimonio fiel",
+    versiculoClave: "3 Juan 1:11",
+  },
+  judas: {
+    autor: "Judas",
+    fechaAprox: "c. 60–80 d.C.",
+    temaCentral: "Contender por la fe y discernir",
+    versiculoClave: "Judas 1:3",
+  },
+  apocalipsis: {
+    autor: "Juan (tradicional)",
+    fechaAprox: "c. 95–96 d.C.",
+    temaCentral: "Victoria final de Dios y esperanza eterna",
+    versiculoClave: "Apocalipsis 21:4",
+  },
+}
+
+const enrichBook = (book: BibleBookLocal): BibleBookLocal => {
+  const details = bookDetailsById[book.id]
+  return details ? { ...book, ...details } : book
+}
+
+bibleBooks.antiguoTestamento = bibleBooks.antiguoTestamento.map(enrichBook)
+bibleBooks.nuevoTestamento = bibleBooks.nuevoTestamento.map(enrichBook)
 
 // Función para obtener todos los libros en una lista plana
 export function getAllBooksFlat(): BibleBookLocal[] {

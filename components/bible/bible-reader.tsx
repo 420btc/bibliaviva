@@ -817,6 +817,62 @@ export function BibleReader() {
     </div>
   )
 
+  const BookInfoPopoverContent = ({ book }: { book: BibleBookLocal }) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h4 className="font-serif font-bold text-lg truncate">{book.nombre}</h4>
+        <span className="text-xs font-mono text-muted-foreground shrink-0">{book.abreviatura}</span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {book.categoria && (
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] uppercase tracking-wider font-semibold border border-primary/20">
+            {book.categoria}
+          </span>
+        )}
+      </div>
+
+      {(book.autor || book.fechaAprox || book.temaCentral || book.versiculoClave) && (
+        <div className="space-y-1 text-xs text-muted-foreground">
+          {book.autor && (
+            <div className="flex gap-2">
+              <span className="text-foreground/70">Autor:</span>
+              <span className="truncate">{book.autor}</span>
+            </div>
+          )}
+          {book.fechaAprox && (
+            <div className="flex gap-2">
+              <span className="text-foreground/70">Fecha:</span>
+              <span className="truncate">{book.fechaAprox}</span>
+            </div>
+          )}
+          {book.temaCentral && (
+            <div className="flex gap-2">
+              <span className="text-foreground/70">Tema:</span>
+              <span className="line-clamp-2">{book.temaCentral}</span>
+            </div>
+          )}
+          {book.versiculoClave && (
+            <div className="flex gap-2">
+              <span className="text-foreground/70">Clave:</span>
+              <span className="truncate">{book.versiculoClave}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {book.resumen && (
+        <p className="text-sm text-muted-foreground leading-relaxed italic border-l-2 border-primary/30 pl-3">
+          {book.resumen}
+        </p>
+      )}
+
+      <div className="text-xs text-muted-foreground pt-2 border-t flex justify-between">
+        <span>Capítulos: {book.capitulos}</span>
+      </div>
+    </div>
+  )
+
   // Renderizado del selector de libros
   const renderBookSelector = () => (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex flex-col p-4 animate-in fade-in">
@@ -859,29 +915,8 @@ export function BibleReader() {
                     <HelpCircle className="w-4 h-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 p-4 z-50" align="start" side="bottom">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-serif font-bold text-lg">{book.nombre}</h4>
-                      <span className="text-xs font-mono text-muted-foreground">{book.abreviatura}</span>
-                    </div>
-                    
-                    {book.categoria && (
-                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] uppercase tracking-wider font-semibold border border-primary/20">
-                        {book.categoria}
-                      </span>
-                    )}
-                    
-                    {book.resumen && (
-                      <p className="text-sm text-muted-foreground leading-relaxed italic border-l-2 border-primary/30 pl-3">
-                        {book.resumen}
-                      </p>
-                    )}
-                    
-                    <div className="text-xs text-muted-foreground pt-2 border-t flex justify-between">
-                      <span>Capítulos: {book.capitulos}</span>
-                    </div>
-                  </div>
+                <PopoverContent className="w-80 p-4 z-50 max-h-80 overflow-auto" align="start" side="bottom">
+                  <BookInfoPopoverContent book={book} />
                 </PopoverContent>
               </Popover>
             </div>
@@ -911,29 +946,8 @@ export function BibleReader() {
                     <HelpCircle className="w-4 h-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 p-4 z-50" align="start" side="bottom">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-serif font-bold text-lg">{book.nombre}</h4>
-                      <span className="text-xs font-mono text-muted-foreground">{book.abreviatura}</span>
-                    </div>
-                    
-                    {book.categoria && (
-                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] uppercase tracking-wider font-semibold border border-primary/20">
-                        {book.categoria}
-                      </span>
-                    )}
-                    
-                    {book.resumen && (
-                      <p className="text-sm text-muted-foreground leading-relaxed italic border-l-2 border-primary/30 pl-3">
-                        {book.resumen}
-                      </p>
-                    )}
-                    
-                    <div className="text-xs text-muted-foreground pt-2 border-t flex justify-between">
-                      <span>Capítulos: {book.capitulos}</span>
-                    </div>
-                  </div>
+                <PopoverContent className="w-80 p-4 z-50 max-h-80 overflow-auto" align="start" side="bottom">
+                  <BookInfoPopoverContent book={book} />
                 </PopoverContent>
               </Popover>
             </div>
