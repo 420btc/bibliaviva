@@ -169,11 +169,11 @@ export default function HomePage() {
         {/* Encabezado */}
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-1 flex items-center gap-2">
+            <h1 className="text-2xl lg:text-3xl font-serif font-bold tracking-tight text-foreground mb-1 flex items-center gap-2">
               {season.id !== 'default' && <span className="text-3xl">{season.emoji}</span>}
               {season.id === 'default' ? "Bienvenido de vuelta" : season.greeting}
             </h1>
-            <p className="text-muted-foreground flex items-center gap-2">
+            <p className="text-muted-foreground font-serif font-semibold flex items-center gap-2">
                {season.id === 'default' ? "Continúa tu viaje espiritual hoy" : `Celebrando: ${season.name}`}
                {season.id !== 'default' && (
                  <span className={`text-xs px-2 py-0.5 rounded-full bg-secondary ${season.accentColor} bg-opacity-10 border border-border/50`}>
@@ -226,13 +226,13 @@ export default function HomePage() {
                 <defs>
                   <linearGradient id="progressLineDark" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#020202" />
-                    <stop offset="100%" stopColor="#2a2a2a" />
+                    <stop offset="100%" stopColor="#4a4a4a" />
                   </linearGradient>
                   <clipPath id="progressClip">
                     <rect x="0" y="0" width={chart.progressRatio * chart.w} height={chart.h} />
                   </clipPath>
                   <filter id="progressLineGlowWhite" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="3.25" result="coloredBlur" />
+                    <feGaussianBlur stdDeviation="5" result="coloredBlur" />
                     <feMerge>
                       <feMergeNode in="coloredBlur" />
                       <feMergeNode in="SourceGraphic" />
@@ -240,6 +240,15 @@ export default function HomePage() {
                   </filter>
                 </defs>
 
+                <path
+                  d={chart.path}
+                  fill="none"
+                  stroke="#000000"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.55"
+                />
                 <path
                   d={chart.path}
                   fill="none"
@@ -253,13 +262,30 @@ export default function HomePage() {
                   d={chart.path}
                   fill="none"
                   stroke="#ffffff"
-                  strokeWidth="2.4"
+                  strokeWidth="3.4"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  opacity="0.9"
+                  opacity="1"
                   filter="url(#progressLineGlowWhite)"
                   clipPath="url(#progressClip)"
                 />
+
+                {chart.points.length >= 2 ? (
+                  <>
+                    <circle cx={chart.points[0].x} cy={chart.points[0].y} r="4.25" fill="#ffffff" opacity="0.92" />
+                    <circle cx={chart.points[0].x} cy={chart.points[0].y} r="4.25" fill="none" stroke="#000000" strokeWidth="1" opacity="0.65" />
+                    <circle cx={chart.points[chart.points.length - 1].x} cy={chart.points[chart.points.length - 1].y} r="4.25" fill="#ffffff" opacity="0.92" />
+                    <circle
+                      cx={chart.points[chart.points.length - 1].x}
+                      cy={chart.points[chart.points.length - 1].y}
+                      r="4.25"
+                      fill="none"
+                      stroke="#000000"
+                      strokeWidth="1"
+                      opacity="0.65"
+                    />
+                  </>
+                ) : null}
 
                 {chart.marker ? (
                   <>
@@ -281,13 +307,37 @@ export default function HomePage() {
                   </>
                 ) : null}
 
-                <text x="0" y={chart.h - 2} fontSize="10" fill="currentColor" className="text-muted-foreground">
-                  Génesis
-                </text>
-                <text x={chart.w} y={chart.h - 2} textAnchor="end" fontSize="10" fill="currentColor" className="text-muted-foreground">
-                  Apocalipsis
-                </text>
+                <g>
+                  <rect x="6" y="10" width="74" height="18" rx="9" fill="rgba(0,0,0,0.55)" stroke="rgba(255,255,255,0.18)" />
+                  <text x="43" y="23" textAnchor="middle" fontSize="11" fill="#ffffff" fontWeight="700" style={{ fontFamily: "var(--font-serif)" }}>
+                    Génesis
+                  </text>
+                </g>
+                <g>
+                  <rect x={chart.w - 6 - 92} y="22" width="92" height="18" rx="9" fill="rgba(0,0,0,0.55)" stroke="rgba(255,255,255,0.18)" />
+                  <text
+                    x={chart.w - 6 - 46}
+                    y="35"
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#ffffff"
+                    fontWeight="700"
+                    style={{ fontFamily: "var(--font-serif)" }}
+                  >
+                    Apocalipsis
+                  </text>
+                </g>
               </svg>
+            </div>
+            <div className="mt-2 flex items-center gap-4 text-[11px] text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-[2px] w-7 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.45)]" />
+                <span>Leído</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-[2px] w-7 rounded-full bg-neutral-900 opacity-80" />
+                <span>Pendiente</span>
+              </div>
             </div>
           </div>
         </div>
