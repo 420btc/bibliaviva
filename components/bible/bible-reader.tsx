@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import useSWR from "swr"
-import { bibleBooks, characters, getAllBooksFlat, themes, type BibleBookLocal } from "@/lib/bible-data"
+import { bibleBooks, characters, findBookByName, getAllBooksFlat, themes, type BibleBookLocal } from "@/lib/bible-data"
 import { getChapter, searchBible, SUPPORTED_VERSIONS, BIBLE_EDITIONS, type ChapterResponse, type SearchResponse, type SearchResult } from "@/lib/bible-api"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -33,14 +34,17 @@ import {
   Globe,
   Library,
   BookOpen,
-  FileDown
+  FileDown,
+  Sparkles,
+  PenLine,
+  Copy
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUserProgress } from "@/hooks/use-user-progress"
 import { useSettings } from "@/components/settings-provider"
 import { useSearchParams, useRouter } from "next/navigation"
-import { generateVerseAudio } from "@/lib/openai-actions"
+import { generateVerseAudio, studyBiblePassage, type StudyMode, type StudyResponse } from "@/lib/openai-actions"
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth-provider"
 import { saveBookmarkAction } from "@/actions/bookmarks"
@@ -114,6 +118,15 @@ export function BibleReader() {
   const [currentEdition, setCurrentEdition] = useState<"CHRISTIAN" | "MESSIANIC">("CHRISTIAN")
   const [primaryVersion, setPrimaryVersion] = useState("rv1960")
   const [glossaryQuery, setGlossaryQuery] = useState("")
+  const [isStudyOpen, setIsStudyOpen] = useState(false)
+  const [studyMode, setStudyMode] = useState<StudyMode>("explicacion")
+  const [studyResult, setStudyResult] = useState<StudyResponse | null>(null)
+  const [isStudyLoading, setIsStudyLoading] = useState(false)
+  const [studyLastKey, setStudyLastKey] = useState<string | null>(null)
+
+  const [isNotesOpen, setIsNotesOpen] = useState(false)
+  const [noteText, setNoteText] = useState("")
+  const [noteKey, setNoteKey] = useState("")
 
   // Efecto para cargar libro/capítulo desde URL o DB/LocalStorage
   useEffect(() => {
@@ -318,6 +331,17 @@ export function BibleReader() {
       }
     }
   }, [selectedBook, selectedChapter, user])
+
+  useEffect(() => {
+    const key = `biblia-viva-note:${selectedBook.id}:${selectedChapter}`
+    setNoteKey(key)
+    try {
+      const saved = localStorage.getItem(key)
+      setNoteText(saved || "")
+    } catch {
+      setNoteText("")
+    }
+  }, [selectedBook.id, selectedChapter])
 
   const [highlights, setHighlights] = useState<Record<string, Record<number, string>>>({})
   const [showBookSelector, setShowBookSelector] = useState(false)
@@ -697,6 +721,94 @@ export function BibleReader() {
     }
   }
 
+  const getSelectedPassage = () => {
+    const verses = chapterData?.vers || []
+    const selected = selectedVerses
+      .slice()
+      .sort((a, b) => a - b)
+      .map((n) => {
+        const v = verses.find((x) => parseInt(x.number) === n)
+        return v ? `${n}. ${v.verse}` : null
+      })
+      .filter(Boolean) as string[]
+
+    if (selected.length > 0) {
+      return {
+        reference: `${selectedBook.nombre} ${selectedChapter}:${selectedVerses.slice().sort((a, b) => a - b).join(",")}`,
+        text: selected.join("\n"),
+        key: `sel:${selectedBook.id}:${selectedChapter}:${selectedVerses.slice().sort((a, b) => a - b).join(",")}:${primaryVersion}`,
+      }
+    }
+
+    const allText = (verses || []).map((v) => `${v.number}. ${v.verse}`).join("\n")
+    const trimmed = allText.length > 4200 ? allText.slice(0, 4200) + "…" : allText
+    return {
+      reference: `${selectedBook.nombre} ${selectedChapter}`,
+      text: trimmed,
+      key: `chap:${selectedBook.id}:${selectedChapter}:${primaryVersion}`,
+    }
+  }
+
+  const runStudy = async (mode: StudyMode) => {
+    if (!chapterData) return
+    const passage = getSelectedPassage()
+    const key = `${passage.key}:${mode}`
+
+    setIsStudyOpen(true)
+    setStudyMode(mode)
+    if (studyLastKey === key && studyResult) return
+
+    setIsStudyLoading(true)
+    try {
+      const res = await studyBiblePassage({
+        reference: passage.reference,
+        text: passage.text,
+        mode,
+        version: BIBLE_EDITIONS[currentEdition].find(v => v.id === primaryVersion)?.name || primaryVersion,
+      })
+      setStudyResult(res)
+      setStudyLastKey(key)
+    } catch (e) {
+      toast.error("No se pudo generar el estudio con IA")
+    } finally {
+      setIsStudyLoading(false)
+    }
+  }
+
+  const copyStudy = async () => {
+    if (!studyResult) return
+    const parts = [
+      studyResult.title,
+      "",
+      `Resumen: ${studyResult.resumen}`,
+      "",
+      `Explicación: ${studyResult.explicacion}`,
+      "",
+      ...(studyResult.puntosClave?.length ? ["Puntos clave:", ...studyResult.puntosClave.map((x) => `- ${x}`), ""] : []),
+      ...(studyResult.aplicaciones?.length ? ["Aplicación:", ...studyResult.aplicaciones.map((x) => `- ${x}`), ""] : []),
+      ...(studyResult.preguntas?.length ? ["Preguntas:", ...studyResult.preguntas.map((x) => `- ${x}`), ""] : []),
+      ...(studyResult.referenciasCruzadas?.length ? ["Referencias cruzadas:", ...studyResult.referenciasCruzadas.map((x) => `- ${x}`), ""] : []),
+      ...(studyResult.oracion ? ["Oración:", studyResult.oracion] : []),
+    ]
+    try {
+      await navigator.clipboard.writeText(parts.join("\n"))
+      toast.success("Copiado")
+    } catch {
+      toast.error("No se pudo copiar")
+    }
+  }
+
+  const saveNote = () => {
+    if (!noteKey) return
+    try {
+      const trimmed = noteText.trimEnd()
+      if (!trimmed) localStorage.removeItem(noteKey)
+      else localStorage.setItem(noteKey, trimmed)
+    } catch {
+      toast.error("No se pudo guardar la nota")
+    }
+  }
+
   // Búsqueda de texto
   const handleSearch = async () => {
     if (!searchQueryText.trim()) return
@@ -734,6 +846,41 @@ export function BibleReader() {
       }, 1000)
       
       setIsSearchOpen(false)
+    }
+  }
+
+  const jumpToReference = (refText: string) => {
+    const match = refText.match(/^\s*(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?\s*$/)
+    if (!match) {
+      toast.error("Referencia no válida")
+      return
+    }
+
+    const bookName = match[1]
+    const chapter = parseInt(match[2])
+    const verseStart = match[3] ? parseInt(match[3]) : null
+    const verseEnd = match[4] ? parseInt(match[4]) : null
+
+    const book = findBookByName(bookName)
+    if (!book || !chapter || chapter < 1 || chapter > book.capitulos) {
+      toast.error("No se encontró la referencia")
+      return
+    }
+
+    setSelectedBook(book)
+    setSelectedChapter(chapter)
+
+    if (verseStart && !isNaN(verseStart)) {
+      const end = verseEnd && verseEnd >= verseStart ? verseEnd : verseStart
+      const range = []
+      for (let v = verseStart; v <= end && range.length < 6; v++) range.push(v)
+      setSelectedVerses(range)
+      setTimeout(() => {
+        const element = document.getElementById(`verse-${verseStart}`)
+        if (element) element.scrollIntoView({ behavior: "smooth", block: "center" })
+      }, 700)
+    } else {
+      setSelectedVerses([])
     }
   }
 
@@ -1274,6 +1421,228 @@ export function BibleReader() {
                   </div>
                 </DialogContent>
               </Dialog>
+
+             <Sheet open={isStudyOpen} onOpenChange={setIsStudyOpen}>
+               <SheetTrigger asChild>
+                 <Button
+                   variant="ghost"
+                   size="icon"
+                   className="h-8 w-8 text-primary hover:bg-primary/10 relative"
+                   title={selectedVerses.length ? `Estudio IA (selección: ${selectedVerses.length})` : "Estudio IA"}
+                   onClick={() => chapterData && runStudy(studyMode)}
+                 >
+                   <Sparkles className="w-4 h-4" />
+                   {selectedVerses.length > 0 && (
+                     <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] leading-4 text-center">
+                       {selectedVerses.length}
+                     </span>
+                   )}
+                 </Button>
+               </SheetTrigger>
+               <SheetContent className="flex flex-col h-full">
+                 <SheetHeader className="shrink-0">
+                   <SheetTitle className="flex items-center gap-2">
+                     <Sparkles className="w-5 h-5" />
+                     Estudio con IA
+                   </SheetTitle>
+                   <SheetDescription>
+                     {selectedVerses.length ? `Selección: ${selectedBook.nombre} ${selectedChapter}:${selectedVerses.slice().sort((a, b) => a - b).join(",")}` : `${selectedBook.nombre} ${selectedChapter}`}
+                   </SheetDescription>
+                 </SheetHeader>
+
+                 <div className="mt-4 flex-1 flex flex-col min-h-0 gap-3">
+                   <div className="grid grid-cols-3 gap-2 shrink-0">
+                     <Button size="sm" variant={studyMode === "resumen" ? "secondary" : "outline"} onClick={() => runStudy("resumen")}>
+                       Resumen
+                     </Button>
+                     <Button size="sm" variant={studyMode === "explicacion" ? "secondary" : "outline"} onClick={() => runStudy("explicacion")}>
+                       Explicar
+                     </Button>
+                     <Button size="sm" variant={studyMode === "aplicacion" ? "secondary" : "outline"} onClick={() => runStudy("aplicacion")}>
+                       Aplicar
+                     </Button>
+                     <Button size="sm" variant={studyMode === "contexto" ? "secondary" : "outline"} onClick={() => runStudy("contexto")}>
+                       Contexto
+                     </Button>
+                     <Button size="sm" variant={studyMode === "preguntas" ? "secondary" : "outline"} onClick={() => runStudy("preguntas")}>
+                       Preguntas
+                     </Button>
+                     <Button size="sm" variant={studyMode === "oracion" ? "secondary" : "outline"} onClick={() => runStudy("oracion")}>
+                       Oración
+                     </Button>
+                   </div>
+
+                   <div className="flex items-center justify-between shrink-0">
+                     <div className="text-xs text-muted-foreground truncate">
+                       {isStudyLoading ? "Generando…" : studyResult ? studyResult.title : "Elige un modo para generar un estudio"}
+                     </div>
+                     <Button size="sm" variant="ghost" className="h-8 px-2" onClick={copyStudy} disabled={!studyResult}>
+                       <Copy className="w-4 h-4" />
+                     </Button>
+                   </div>
+
+                   <ScrollArea className="flex-1 -mx-6 px-6 h-full">
+                     {isStudyLoading ? (
+                       <div className="py-8 flex items-center justify-center text-muted-foreground">
+                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                         Generando estudio…
+                       </div>
+                     ) : studyResult ? (
+                       <div className="space-y-4 pb-10">
+                         <Card className="p-4">
+                           <div className="text-sm font-semibold">{studyResult.title}</div>
+                           <div className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap leading-relaxed">
+                             {studyResult.resumen}
+                           </div>
+                         </Card>
+
+                         <Card className="p-4">
+                           <div className="text-sm font-semibold">Explicación</div>
+                           <div className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap leading-relaxed">
+                             {studyResult.explicacion}
+                           </div>
+                         </Card>
+
+                         {studyResult.puntosClave?.length ? (
+                           <Card className="p-4">
+                             <div className="text-sm font-semibold">Puntos clave</div>
+                             <div className="mt-2 space-y-2">
+                               {studyResult.puntosClave.slice(0, 8).map((p, idx) => (
+                                 <div key={idx} className="text-sm text-muted-foreground leading-relaxed">
+                                   • {p}
+                                 </div>
+                               ))}
+                             </div>
+                           </Card>
+                         ) : null}
+
+                         {studyResult.aplicaciones?.length ? (
+                           <Card className="p-4">
+                             <div className="text-sm font-semibold">Aplicación</div>
+                             <div className="mt-2 space-y-2">
+                               {studyResult.aplicaciones.slice(0, 8).map((a, idx) => (
+                                 <div key={idx} className="text-sm text-muted-foreground leading-relaxed">
+                                   • {a}
+                                 </div>
+                               ))}
+                             </div>
+                           </Card>
+                         ) : null}
+
+                         {studyResult.preguntas?.length ? (
+                           <Card className="p-4">
+                             <div className="text-sm font-semibold">Preguntas</div>
+                             <div className="mt-2 space-y-2">
+                               {studyResult.preguntas.slice(0, 8).map((q, idx) => (
+                                 <div key={idx} className="text-sm text-muted-foreground leading-relaxed">
+                                   • {q}
+                                 </div>
+                               ))}
+                             </div>
+                           </Card>
+                         ) : null}
+
+                         {studyResult.referenciasCruzadas?.length ? (
+                           <Card className="p-4">
+                             <div className="text-sm font-semibold">Referencias cruzadas</div>
+                             <div className="mt-2 flex flex-wrap gap-2">
+                               {studyResult.referenciasCruzadas.slice(0, 10).map((r, idx) => (
+                                <Button
+                                  key={idx}
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-7 px-2 text-[10px] uppercase tracking-wider"
+                                  onClick={() => {
+                                    setIsStudyOpen(false)
+                                    jumpToReference(r)
+                                  }}
+                                >
+                                  {r}
+                                </Button>
+                               ))}
+                             </div>
+                           </Card>
+                         ) : null}
+
+                         {studyResult.oracion ? (
+                           <Card className="p-4">
+                             <div className="text-sm font-semibold">Oración</div>
+                             <div className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap leading-relaxed">
+                               {studyResult.oracion}
+                             </div>
+                           </Card>
+                         ) : null}
+                       </div>
+                     ) : (
+                       <div className="py-10 text-center text-muted-foreground text-sm">
+                         Selecciona versículos para precisión o genera el estudio del capítulo.
+                       </div>
+                     )}
+                   </ScrollArea>
+                 </div>
+               </SheetContent>
+             </Sheet>
+
+             <Sheet
+               open={isNotesOpen}
+               onOpenChange={(open) => {
+                 if (!open) saveNote()
+                 setIsNotesOpen(open)
+               }}
+             >
+               <SheetTrigger asChild>
+                 <Button
+                   variant="ghost"
+                   size="icon"
+                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                   title="Notas"
+                 >
+                   <PenLine className="w-4 h-4" />
+                 </Button>
+               </SheetTrigger>
+               <SheetContent className="flex flex-col h-full">
+                 <SheetHeader className="shrink-0">
+                   <SheetTitle className="flex items-center gap-2">
+                     <PenLine className="w-5 h-5" />
+                     Notas
+                   </SheetTitle>
+                   <SheetDescription>
+                     {selectedBook.nombre} {selectedChapter}
+                   </SheetDescription>
+                 </SheetHeader>
+
+                 <div className="mt-4 flex-1 flex flex-col min-h-0 gap-3">
+                   <div className="flex items-center justify-between shrink-0">
+                     <div className="text-xs text-muted-foreground truncate">
+                       Guardado local, por capítulo
+                     </div>
+                     <Button
+                       size="sm"
+                       variant="ghost"
+                       className="h-8 px-3 text-destructive hover:text-destructive"
+                       onClick={() => {
+                         setNoteText("")
+                         try {
+                           if (noteKey) localStorage.removeItem(noteKey)
+                        } catch {
+                          void 0
+                        }
+                       }}
+                     >
+                       Borrar
+                     </Button>
+                   </div>
+
+                   <Textarea
+                     value={noteText}
+                     onChange={(e) => setNoteText(e.target.value)}
+                     onBlur={saveNote}
+                     placeholder="Escribe tus notas… (ideas, preguntas, aplicaciones, etc.)"
+                     className="flex-1 min-h-[40vh]"
+                   />
+                 </div>
+               </SheetContent>
+             </Sheet>
 
              <Button
                variant="ghost"

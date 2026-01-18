@@ -137,3 +137,79 @@ export async function chatWithBibleAI(messages: { role: "user" | "assistant" | "
     throw new Error("No se pudo obtener respuesta del asistente")
   }
 }
+
+export type StudyMode =
+  | "resumen"
+  | "explicacion"
+  | "aplicacion"
+  | "oracion"
+  | "preguntas"
+  | "contexto"
+  | "referencias"
+
+export interface StudyResponse {
+  title: string
+  resumen: string
+  explicacion: string
+  puntosClave: string[]
+  aplicaciones: string[]
+  preguntas: string[]
+  referenciasCruzadas: string[]
+  oracion: string
+}
+
+export async function studyBiblePassage(input: {
+  reference: string
+  text: string
+  mode: StudyMode
+  version?: string
+}) {
+  const { reference, text, mode, version } = input
+
+  const modeHints: Record<StudyMode, string> = {
+    resumen: "Prioriza un resumen claro y corto.",
+    explicacion: "Prioriza explicación versículo a versículo si aplica, sin tecnicismos excesivos.",
+    aplicacion: "Prioriza aplicaciones prácticas, concretas y realistas.",
+    oracion: "Prioriza una oración breve, reverente y relacionada al pasaje.",
+    preguntas: "Prioriza preguntas de reflexión y estudio en grupo.",
+    contexto: "Prioriza contexto histórico/cultural/literario con precisión y cautela.",
+    referencias: "Prioriza referencias cruzadas bíblicas relevantes y justificadas.",
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "Eres un asistente bíblico experto, sobrio y preciso. Responde en español, sin inventar datos. Si algo es incierto, dilo con cautela. Devuelve SOLO JSON válido con esta estructura exacta: {\"title\":string,\"resumen\":string,\"explicacion\":string,\"puntosClave\":string[],\"aplicaciones\":string[],\"preguntas\":string[],\"referenciasCruzadas\":string[],\"oracion\":string}. Mantén el estilo minimalista: frases cortas, bullets directos, sin relleno.",
+        },
+        {
+          role: "user",
+          content: [
+            `Referencia: ${reference}`,
+            version ? `Versión: ${version}` : null,
+            `Modo: ${mode} (${modeHints[mode]})`,
+            "Texto:",
+            text,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.4,
+      max_tokens: 900,
+    })
+
+    const content = response.choices[0].message.content
+    if (!content) throw new Error("Respuesta vacía")
+
+    const parsed = JSON.parse(content) as StudyResponse
+    return parsed
+  } catch (error) {
+    console.error("Error en estudio IA:", error)
+    throw new Error("No se pudo generar el estudio del pasaje")
+  }
+}
