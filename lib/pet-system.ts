@@ -43,7 +43,7 @@ export const PET_CONFIG = {
   DECAY_HOURS: 6,               // Horas entre decay
   DECAY_AMOUNT: 10,             // Energía perdida por decay
   POINTS_PER_LEVEL: 100,        // Puntos gastados para subir nivel
-  MAX_LEVEL: 10
+  MAX_LEVEL: 33
 }
 
 // Calcular el estado de ánimo basado en energía
@@ -91,6 +91,29 @@ export const petLevels = [
   { level: 8, name: 'Querubín Glorioso', description: 'Su luz ilumina caminos' },
   { level: 9, name: 'Querubín Radiante', description: 'Un faro de esperanza' },
   { level: 10, name: 'Querubín Divino', description: 'Ha alcanzado la plenitud celestial' },
+  { level: 11, name: 'Querubín Llama', description: 'Su luz arde con gozo sereno' },
+  { level: 12, name: 'Querubín Cántico', description: 'Su canto anima el corazón' },
+  { level: 13, name: 'Querubín Brisa', description: 'Trae calma en medio del ruido' },
+  { level: 14, name: 'Querubín Arcoíris', description: 'Refleja promesas y esperanza' },
+  { level: 15, name: 'Querubín Trono', description: 'Su presencia inspira reverencia' },
+  { level: 16, name: 'Querubín Rocío', description: 'Renueva con ternura constante' },
+  { level: 17, name: 'Querubín Templo', description: 'Guarda silencio y paz' },
+  { level: 18, name: 'Querubín Sendero', description: 'Ilumina pasos firmes' },
+  { level: 19, name: 'Querubín Arpa', description: 'Su melodía fortalece el alma' },
+  { level: 20, name: 'Querubín Pacto', description: 'Su brillo recuerda fidelidad' },
+  { level: 21, name: 'Querubín Vela', description: 'Una llama que no se apaga' },
+  { level: 22, name: 'Querubín Manantial', description: 'Fluye vida en su resplandor' },
+  { level: 23, name: 'Querubín Corona', description: 'Honra el camino recorrido' },
+  { level: 24, name: 'Querubín Horizonte', description: 'Abre visión hacia lo alto' },
+  { level: 25, name: 'Querubín Almendra', description: 'Vigila y florece en su tiempo' },
+  { level: 26, name: 'Querubín Muralla', description: 'Protege con luz amable' },
+  { level: 27, name: 'Querubín Relámpago', description: 'Su destello trae claridad' },
+  { level: 28, name: 'Querubín Altar', description: 'Su luz invita a gratitud' },
+  { level: 29, name: 'Querubín Gloria', description: 'Resplandece con propósito' },
+  { level: 30, name: 'Querubín Sión', description: 'Refleja paz y firmeza' },
+  { level: 31, name: 'Querubín Firmamento', description: 'Brilla como cielo infinito' },
+  { level: 32, name: 'Querubín Eternidad', description: 'Su luz permanece sin cansancio' },
+  { level: 33, name: 'Querubín Plenitud', description: 'La luz alcanza su máxima armonía' },
 ]
 
 // Fondos desbloqueables por nivel
