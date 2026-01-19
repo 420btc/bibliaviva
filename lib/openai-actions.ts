@@ -72,56 +72,66 @@ function shouldTryFallbackModel(error: unknown) {
   )
 }
 
+function pickImageResponseFormat(model: string): "url" | "b64_json" {
+  const m = (model || "").toLowerCase()
+  if (m.includes("gpt-image")) return "b64_json"
+  if (m.includes("dall-e")) return "url"
+  return "url"
+}
+
+function pickImageSize(format: "url" | "b64_json"): "256x256" | "512x512" {
+  return format === "b64_json" ? "256x256" : "512x512"
+}
+
 export async function generateVerseImage(verseText: string) {
   if (!hasOpenAIKey()) {
     return { url: null, error: "OPENAI_API_KEY no está configurada en el servidor." }
   }
 
-  try {
-    const openai = await getOpenAIClient()
-    const response = await openai.images.generate({
-      model: OPENAI_MODELS.image,
-      prompt: `Una imagen artística, espiritual y serena que represente este versículo bíblico: "${verseText}". Estilo pintura al óleo suave, luz divina, inspirador. Sin texto.`,
+  const prompt = `Una imagen artística, espiritual y serena que represente este versículo bíblico: "${verseText}". Estilo pintura al óleo suave, luz divina, inspirador. Sin texto.`
+  const openai = await getOpenAIClient()
+
+  const tryGenerate = async (model: string) => {
+    const response_format = pickImageResponseFormat(model)
+    const size = pickImageSize(response_format)
+    const response = await (openai as any).images.generate({
+      model,
+      prompt,
       n: 1,
-      size: "1024x1024",
+      size,
+      response_format,
     })
 
-    if (!response.data || !response.data[0]) {
-      return { url: null, error: "No se recibió imagen de OpenAI" }
+    if (!response?.data?.[0]) {
+      return { url: null, error: "No se recibió imagen de OpenAI" as string }
     }
 
     const first = response.data[0]
-    if ("b64_json" in first && first.b64_json) {
-      return { url: `data:image/png;base64,${first.b64_json}` }
-    }
-    if ("url" in first && first.url) {
-      return { url: first.url }
-    }
-    return { url: null, error: "La respuesta de imagen no contiene datos utilizables" }
+    if ("url" in first && first.url) return { url: first.url as string, error: null as string | null }
+    if ("b64_json" in first && first.b64_json) return { url: `data:image/png;base64,${first.b64_json}`, error: null as string | null }
+    return { url: null, error: "La respuesta de imagen no contiene datos utilizables" as string }
+  }
+
+  try {
+    const res = await tryGenerate(OPENAI_MODELS.image)
+    if (res.url) return { url: res.url }
+    return { url: null, error: res.error || "No se pudo generar la imagen" }
   } catch (error) {
-    if (!shouldTryFallbackModel(error) || OPENAI_MODELS.image === FALLBACK_MODELS.image) {
+    const primaryDetails = getOpenAIErrorMessage(error)
+
+    if (OPENAI_MODELS.image === FALLBACK_MODELS.image) {
       console.error("Error generating image:", error)
-      return { url: null, error: "No se pudo generar la imagen" }
+      return { url: null, error: primaryDetails || "No se pudo generar la imagen" }
     }
 
     try {
-      const openai = await getOpenAIClient()
-      const response = await openai.images.generate({
-        model: FALLBACK_MODELS.image,
-        prompt: `Una imagen artística, espiritual y serena que represente este versículo bíblico: "${verseText}". Estilo pintura al óleo suave, luz divina, inspirador. Sin texto.`,
-        n: 1,
-        size: "1024x1024",
-        response_format: "url",
-      })
-
-      if (!response.data || !response.data[0] || !("url" in response.data[0]) || !response.data[0].url) {
-        return { url: null, error: "No se recibió imagen utilizable de OpenAI" }
-      }
-
-      return { url: response.data[0].url }
+      const res = await tryGenerate(FALLBACK_MODELS.image)
+      if (res.url) return { url: res.url }
+      return { url: null, error: res.error || primaryDetails || "No se pudo generar la imagen" }
     } catch (fallbackError) {
       console.error("Error generating image (fallback):", fallbackError)
-      return { url: null, error: "No se pudo generar la imagen" }
+      const details = getOpenAIErrorMessage(fallbackError) || primaryDetails
+      return { url: null, error: details || "No se pudo generar la imagen" }
     }
   }
 }

@@ -204,7 +204,11 @@ export function VerseOfDay() {
       toast.success(`Imagen generada. Te quedan ${3 - newCount} usos hoy.`)
     } catch (error) {
       console.error(error)
-      toast.error("No se pudo generar la imagen. Inténtalo de nuevo.")
+      const msg =
+        typeof error === "object" && error && "message" in error && typeof (error as any).message === "string"
+          ? (error as any).message
+          : "No se pudo generar la imagen. Inténtalo de nuevo."
+      toast.error(msg)
     } finally {
       setIsGeneratingImage(false)
     }
