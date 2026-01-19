@@ -61,9 +61,7 @@ export function ReadingPlans() {
   }
 
   const handleContinue = (planId: number) => {
-    // Aquí iríamos a la página de detalle del plan (a implementar)
-    // Por ahora, solo toast
-    toast.info("Próximamente: Vista de detalle del plan")
+    router.push(`/planes/${planId}`)
   }
 
   if (isLoading) {
