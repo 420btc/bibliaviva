@@ -216,53 +216,53 @@ export function VerseOfDay() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-      <Card className="relative overflow-hidden glass-card p-6 lg:p-8">
+      <Card className="relative overflow-hidden glass-card p-6 lg:p-8 border-[#D2B48C]/20 bg-[#D2B48C]/5 hover:bg-[#D2B48C]/10 transition-colors">
         {isLoadingVerse ? (
            <div className="flex flex-col items-center justify-center py-12 gap-4">
-             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-             <p className="text-sm text-muted-foreground">Buscando inspiración divina...</p>
+             <Loader2 className="w-8 h-8 animate-spin text-[#D2B48C]" />
+             <p className="text-sm text-[#D2B48C]/60">Buscando inspiración divina...</p>
            </div>
         ) : (
           <>
         {/* Fondo decorativo */}
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#D2B48C] rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#D2B48C] rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10">
           {/* Encabezado */}
           <div className="flex items-center gap-2 mb-4">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full gradient-primary">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#D2B48C]/20">
+              <Sparkles className="w-4 h-4 text-[#D2B48C]" />
             </div>
-            <span className="text-sm font-medium text-muted-foreground">Versículo del Día</span>
+            <span className="text-sm font-medium text-[#D2B48C]/60">Versículo del Día</span>
             
             {/* Botón de Ayuda IA */}
             <Button
               variant="ghost"
               size="icon"
-              className="ml-auto h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+              className="ml-auto h-8 w-8 rounded-full hover:bg-[#D2B48C]/10 hover:text-[#D2B48C] transition-colors"
               title="Explicar con IA"
               onClick={() => router.push(`/chat?verse=${encodeURIComponent(`${verse.libro} ${verse.capitulo}:${verse.versiculo}`)}&text=${encodeURIComponent(verse.texto)}`)}
             >
-              <HelpCircle className="w-5 h-5" />
+              <HelpCircle className="w-5 h-5 text-[#D2B48C]" />
             </Button>
           </div>
 
           {/* Versículo */}
-          <blockquote className="verse-text text-2xl lg:text-3xl font-semibold text-blue-950 dark:text-blue-50 mb-4 text-pretty leading-relaxed drop-shadow-sm">
+          <blockquote className="verse-text text-2xl lg:text-3xl font-semibold text-[#D2B48C] mb-4 text-pretty leading-relaxed drop-shadow-sm">
             &ldquo;{verse.texto}&rdquo;
           </blockquote>
 
           {/* Referencia */}
           <Link href={`/biblia?libro=${verse.libro}&capitulo=${verse.capitulo}&versiculo=${verse.versiculo}`}>
             <div className="inline-flex items-center gap-2 mb-6 group cursor-pointer">
-              <p className="text-primary font-semibold group-hover:underline decoration-primary/50 underline-offset-4 transition-all">
+              <p className="text-[#D2B48C] font-semibold group-hover:underline decoration-[#D2B48C]/50 underline-offset-4 transition-all">
                 {verse.libro} {verse.capitulo}:{verse.versiculo}
               </p>
-              <BookOpen className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -ml-1 group-hover:ml-0" />
-              <span className="text-muted-foreground font-normal text-sm">— {verse.version}</span>
+              <BookOpen className="w-4 h-4 text-[#D2B48C]/60 opacity-0 group-hover:opacity-100 transition-opacity -ml-1 group-hover:ml-0" />
+              <span className="text-[#D2B48C]/60 font-normal text-sm">— {verse.version}</span>
             </div>
           </Link>
 
@@ -271,7 +271,7 @@ export function VerseOfDay() {
             <Button 
               variant={isPlaying ? "default" : "secondary"} 
               size="sm" 
-              className="gap-2"
+              className={`gap-2 ${isPlaying ? 'bg-[#D2B48C] text-black hover:bg-[#D2B48C]/90' : 'bg-[#D2B48C]/10 text-[#D2B48C] hover:bg-[#D2B48C]/20 border-0'}`}
               onClick={handleListen}
               disabled={isPlaying && !audioUrl}
             >
@@ -283,12 +283,21 @@ export function VerseOfDay() {
               {isPlaying ? "Reproduciendo..." : "Escuchar"}
             </Button>
             
-            <Button variant="secondary" size="sm" className="gap-2">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="gap-2 bg-[#D2B48C]/10 text-[#D2B48C] hover:bg-[#D2B48C]/20 border-0"
+            >
               <Bookmark className="w-4 h-4" />
               Guardar
             </Button>
             
-            <Button variant="secondary" size="sm" className="gap-2" onClick={handleShare}>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="gap-2 bg-[#D2B48C]/10 text-[#D2B48C] hover:bg-[#D2B48C]/20 border-0" 
+              onClick={handleShare}
+            >
               <Share2 className="w-4 h-4" />
               Compartir
             </Button>
@@ -296,7 +305,7 @@ export function VerseOfDay() {
             <Button 
               variant="default" 
               size="sm" 
-              className="gap-2 gradient-primary border-0"
+              className="gap-2 bg-[#D2B48C] text-black hover:bg-[#D2B48C]/90 border-0"
               onClick={handleGenerateArt}
               disabled={isGeneratingImage || remainingGens === 0}
               title={remainingGens === 0 ? "Límite diario alcanzado" : `${remainingGens} generaciones restantes hoy`}

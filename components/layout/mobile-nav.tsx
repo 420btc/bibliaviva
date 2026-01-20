@@ -120,24 +120,24 @@ export function MobileNav() {
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4 pb-10 space-y-6">
               
               {/* Sección de Usuario Minimalista */}
-              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 p-5 text-white shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
-                <div className="absolute -top-8 -right-4 opacity-20">
-                  <Crown className="w-24 h-24 text-white/30" />
+              <div className="relative overflow-hidden rounded-3xl border border-[#D2B48C]/20 bg-neutral-950 p-5 text-[#D2B48C] shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+                <div className="absolute top-2 right-6 opacity-20">
+                  <Crown className="w-24 h-24 text-[#D2B48C]/30" />
                 </div>
 
                 <div className="relative z-10 flex items-center gap-4">
-                  <Avatar className="w-14 h-14 border border-white/10 bg-white/5 ring-2 ring-white/10">
-                    <AvatarFallback className="bg-white/10 text-white text-base font-semibold">
+                  <Avatar className="w-14 h-14 border border-[#D2B48C]/20 bg-[#D2B48C]/5 ring-2 ring-[#D2B48C]/10">
+                    <AvatarFallback className="bg-[#D2B48C]/10 text-[#D2B48C] text-base font-semibold">
                       {user?.name?.substring(0, 2).toUpperCase() || "BV"}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="min-w-0">
-                    <p className="text-[11px] uppercase tracking-wider text-white/50">Tu progreso</p>
-                    <h3 className="truncate text-lg font-semibold tracking-tight">
+                    <p className="text-[11px] uppercase tracking-wider text-[#D2B48C]/50">Tu progreso</p>
+                    <h3 className="truncate text-lg font-semibold tracking-tight text-[#D2B48C]">
                       {user ? user.name : "Biblia Viva"}
                     </h3>
-                    <p className="text-xs text-white/50">
+                    <p className="text-xs text-[#D2B48C]/50">
                       {user ? `Nivel ${progress.nivel} · ${progress.titulo}` : "Inicia sesión para guardar tu progreso"}
                     </p>
                   </div>
@@ -146,25 +146,25 @@ export function MobileNav() {
                 {user && (
                   <>
                     <div className="mt-4 grid grid-cols-3 gap-3">
-                      <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                        <div className="text-[10px] uppercase tracking-wider text-white/50">Nivel</div>
-                        <div className="text-lg font-semibold">{progress.nivel}</div>
+                      <div className="rounded-xl border border-[#D2B48C]/20 bg-[#D2B48C]/5 p-3 text-center">
+                        <div className="text-[10px] uppercase tracking-wider text-[#D2B48C]/50">Nivel</div>
+                        <div className="text-lg font-semibold text-[#D2B48C]">{progress.nivel}</div>
                       </div>
-                      <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                        <div className="text-[10px] uppercase tracking-wider text-white/50">XP Total</div>
-                        <div className="text-lg font-semibold">{progress.xp}</div>
+                      <div className="rounded-xl border border-[#D2B48C]/20 bg-[#D2B48C]/5 p-3 text-center">
+                        <div className="text-[10px] uppercase tracking-wider text-[#D2B48C]/50">XP Total</div>
+                        <div className="text-lg font-semibold text-[#D2B48C]">{progress.xp}</div>
                       </div>
-                      <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
-                        <div className="text-[10px] uppercase tracking-wider text-white/50">Racha</div>
-                        <div className="text-lg font-semibold">{progress.racha}</div>
+                      <div className="rounded-xl border border-[#D2B48C]/20 bg-[#D2B48C]/5 p-3 text-center">
+                        <div className="text-[10px] uppercase tracking-wider text-[#D2B48C]/50">Racha</div>
+                        <div className="text-lg font-semibold text-[#D2B48C]">{progress.racha}</div>
                       </div>
                     </div>
                     <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-between text-[11px] text-white/50">
+                      <div className="flex items-center justify-between text-[11px] text-[#D2B48C]/50">
                         <span>Progreso al siguiente nivel</span>
-                        <span className="text-white/80">{Math.round(progressPercent)}%</span>
+                        <span className="text-[#D2B48C]/80">{Math.round(progressPercent)}%</span>
                       </div>
-                      <Progress value={progressPercent} className="h-2 bg-white/10 [&>div]:bg-white" />
+                      <Progress value={progressPercent} className="h-2 bg-[#D2B48C]/10 [&>div]:bg-[#D2B48C]" />
                     </div>
                   </>
                 )}
@@ -179,7 +179,7 @@ export function MobileNav() {
                     onClick={() => setOpen(false)}
                     className="flex flex-col gap-2 p-4 rounded-xl bg-[#111111] border border-[#424242] transition-all active:scale-95 hover:bg-[#1F1F1F] hover:border-[#616161] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                   >
-                    <item.icon className="w-6 h-6 text-[#E0E0E0]" />
+                    <item.icon className="w-6 h-6 text-[#D2B48C]" />
                     <div>
                       <span className="block font-medium text-sm text-white">{item.label}</span>
                       <span className="block text-[10px] text-[#BDBDBD] leading-tight mt-0.5">{item.desc}</span>

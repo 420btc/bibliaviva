@@ -16,8 +16,8 @@ export function PopularThemes() {
       transition={{ duration: 0.5, delay: 0.4 }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-3xl font-cursive text-foreground">Temas Populares</h2>
-        <Link href="/explorador" className="text-sm text-primary hover:text-primary/80 flex items-center gap-1">
+        <h2 className="text-3xl font-cursive text-[#D2B48C]">Temas Populares</h2>
+        <Link href="/explorador" className="text-sm text-[#D2B48C] hover:text-[#D2B48C]/80 flex items-center gap-1">
           Ver todos
           <ArrowRight className="w-4 h-4" />
         </Link>
@@ -33,12 +33,12 @@ export function PopularThemes() {
             className="md:hidden"
           >
             <Link href={`/explorador?tema=${theme.id}`}>
-              <Card className="glass-card p-4 hover:border-primary/50 transition-all duration-500 group cursor-pointer hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.3)] dark:hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.2)] hover:bg-white/5 active:scale-95">
+              <Card className="glass-card p-4 border-[#D2B48C]/20 hover:border-[#D2B48C]/50 transition-all duration-500 group cursor-pointer hover:shadow-[0_0_50px_-10px_rgba(210,180,140,0.3)] bg-[#D2B48C]/5 hover:bg-[#D2B48C]/10 active:scale-95">
                 <div className="w-3 h-3 rounded-full mb-3 transition-transform duration-500 group-hover:scale-125" style={{ backgroundColor: theme.color }} />
-                <h3 className="font-cursive text-foreground text-2xl mb-1 group-hover:text-primary transition-colors text-center">
+                <h3 className="font-cursive text-[#D2B48C] text-2xl mb-1 group-hover:text-[#D2B48C] transition-colors text-center">
                   {theme.nombre}
                 </h3>
-                <p className="text-xs text-muted-foreground">{theme.versiculos} versículos</p>
+                <p className="text-xs text-[#D2B48C]/60">{theme.versiculos} versículos</p>
               </Card>
             </Link>
           </motion.div>
@@ -53,12 +53,12 @@ export function PopularThemes() {
             className="col-span-2 md:hidden"
           >
             <Link href={`/explorador?tema=${fortalezaTheme.id}`}>
-              <Card className="glass-card p-6 hover:border-primary/50 transition-all duration-500 group cursor-pointer hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.3)] dark:hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.2)] hover:bg-white/5 active:scale-95">
+              <Card className="glass-card p-6 border-[#D2B48C]/20 hover:border-[#D2B48C]/50 transition-all duration-500 group cursor-pointer hover:shadow-[0_0_50px_-10px_rgba(210,180,140,0.3)] bg-[#D2B48C]/5 hover:bg-[#D2B48C]/10 active:scale-95">
                 <div className="w-3 h-3 rounded-full mb-3 transition-transform duration-500 group-hover:scale-125" style={{ backgroundColor: fortalezaTheme.color }} />
-                <h3 className="font-cursive text-foreground text-3xl mb-1 group-hover:text-primary transition-colors text-center">
+                <h3 className="font-cursive text-[#D2B48C] text-3xl mb-1 group-hover:text-[#D2B48C] transition-colors text-center">
                   {fortalezaTheme.nombre}
                 </h3>
-                <p className="text-xs text-muted-foreground">{fortalezaTheme.versiculos} versículos</p>
+                <p className="text-xs text-[#D2B48C]/60">{fortalezaTheme.versiculos} versículos</p>
               </Card>
             </Link>
           </motion.div>
@@ -74,12 +74,12 @@ export function PopularThemes() {
             className="hidden md:block"
           >
             <Link href={`/explorador?tema=${theme.id}`}>
-              <Card className="glass-card p-4 hover:border-primary/50 transition-all duration-500 group cursor-pointer hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.3)] dark:hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.2)] hover:bg-white/5 active:scale-95">
+              <Card className="glass-card p-4 border-[#D2B48C]/20 hover:border-[#D2B48C]/50 transition-all duration-500 group cursor-pointer hover:shadow-[0_0_50px_-10px_rgba(210,180,140,0.3)] bg-[#D2B48C]/5 hover:bg-[#D2B48C]/10 active:scale-95">
                 <div className="w-3 h-3 rounded-full mb-3 transition-transform duration-500 group-hover:scale-125" style={{ backgroundColor: theme.color }} />
-                <h3 className="font-cursive text-foreground text-2xl mb-1 group-hover:text-primary transition-colors text-center">
+                <h3 className="font-cursive text-[#D2B48C] text-2xl mb-1 group-hover:text-[#D2B48C] transition-colors text-center">
                   {theme.nombre}
                 </h3>
-                <p className="text-xs text-muted-foreground">{theme.versiculos} versículos</p>
+                <p className="text-xs text-[#D2B48C]/60">{theme.versiculos} versículos</p>
               </Card>
             </Link>
           </motion.div>

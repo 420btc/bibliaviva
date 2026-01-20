@@ -50,32 +50,32 @@ export function QuickActions() {
       icon: Book,
       label: "Continuar Lectura",
       description: readingInfo.description,
-      color: "from-blue-500/20 to-indigo-500/20",
-      iconColor: "text-blue-400",
+      color: "bg-[#D2B48C]/20",
+      iconColor: "text-[#D2B48C]",
     },
     {
       href: "/chat",
       icon: MessageCircle,
-      label: "Devocional IA",
-      description: "Reflexión diaria",
-      color: "from-purple-500/20 to-pink-500/20",
-      iconColor: "text-purple-400",
+      label: "Chat IA",
+      description: "Pregunta tus dudas",
+      color: "bg-[#D2B48C]/20",
+      iconColor: "text-[#D2B48C]",
     },
     {
       href: "/explorador",
       icon: Network,
       label: "Explorar Temas",
       description: "8 temas disponibles",
-      color: "from-cyan-500/20 to-teal-500/20",
-      iconColor: "text-cyan-400",
+      color: "bg-[#D2B48C]/20",
+      iconColor: "text-[#D2B48C]",
     },
     {
       href: "/viaje",
       icon: Trophy,
       label: "Quiz del Día",
       description: "+25 XP disponible",
-      color: "from-amber-500/20 to-orange-500/20",
-      iconColor: "text-amber-400",
+      color: "bg-[#D2B48C]/20",
+      iconColor: "text-[#D2B48C]",
     },
   ]
 
@@ -86,7 +86,7 @@ export function QuickActions() {
       transition={{ duration: 0.5, delay: 0.2 }}
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Acciones Rápidas</h2>
+        <h2 className="text-lg font-semibold text-[#D2B48C]">Acciones Rápidas</h2>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {actions.map((action, index) => (
@@ -97,17 +97,17 @@ export function QuickActions() {
             transition={{ duration: 0.3, delay: 0.1 * index }}
           >
             <Link href={action.href}>
-              <Card className="glass-card p-3 flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all duration-500 group cursor-pointer h-full gap-2 hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.3)] dark:hover:shadow-[0_0_50px_-10px_rgba(255,255,255,0.2)] hover:bg-white/5 active:scale-95">
+              <Card className="glass-card p-3 flex flex-col items-center justify-center text-center border-[#D2B48C]/20 hover:border-[#D2B48C]/50 transition-all duration-500 group cursor-pointer h-full gap-2 hover:shadow-[0_0_50px_-10px_rgba(210,180,140,0.3)] bg-[#D2B48C]/5 hover:bg-[#D2B48C]/10 active:scale-95">
                 <div
-                  className={`w-10 h-10 rounded-lg bg-gradient-to-br ${action.color} flex items-center justify-center shrink-0 transition-transform duration-500 group-hover:scale-110`}
+                  className={`w-10 h-10 rounded-lg ${action.color} flex items-center justify-center shrink-0 transition-transform duration-500 group-hover:scale-110`}
                 >
                   <action.icon className={`w-5 h-5 ${action.iconColor}`} />
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors tracking-tight leading-tight">
+                  <h3 className="font-bold text-[#D2B48C] text-sm group-hover:text-[#D2B48C] transition-colors tracking-tight leading-tight">
                     {action.label}
                   </h3>
-                  <p className="text-xs text-muted-foreground leading-tight">{action.description}</p>
+                  <p className="text-xs text-[#D2B48C]/60 leading-tight">{action.description}</p>
                 </div>
               </Card>
             </Link>
