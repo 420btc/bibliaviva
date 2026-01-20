@@ -22,7 +22,7 @@ export function MobileHeader() {
             priority
           />
         </div>
-        <span className="font-serif font-bold text-lg text-foreground tracking-tight">
+        <span className="font-serif font-bold text-lg text-white tracking-tight">
           Biblia Viva
         </span>
       </div>

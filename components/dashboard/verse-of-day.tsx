@@ -251,7 +251,7 @@ export function VerseOfDay() {
           </div>
 
           {/* Versículo */}
-          <blockquote className="verse-text text-2xl lg:text-3xl font-semibold text-[#D2B48C] mb-4 text-pretty leading-relaxed drop-shadow-sm">
+          <blockquote className="verse-text text-2xl lg:text-4xl font-bold text-[#D2B48C] mb-4 text-pretty leading-relaxed drop-shadow-[0_0_15px_rgba(210,180,140,0.3)] tracking-tight italic">
             &ldquo;{verse.texto}&rdquo;
           </blockquote>
 

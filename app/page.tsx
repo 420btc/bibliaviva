@@ -169,7 +169,7 @@ export default function HomePage() {
         {/* Encabezado */}
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-serif font-bold tracking-tight text-foreground mb-1 flex items-center gap-2">
+            <h1 className="text-2xl lg:text-3xl font-serif font-bold tracking-tight text-[#D2B48C] mb-1 flex items-center gap-2 drop-shadow-[0_0_8px_rgba(210,180,140,0.5)]">
               {season.id !== 'default' && <span className="text-3xl">{season.emoji}</span>}
               {season.id === 'default' ? "Bienvenido de vuelta" : season.greeting}
             </h1>
