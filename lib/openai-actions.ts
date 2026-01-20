@@ -79,8 +79,8 @@ function pickImageResponseFormat(model: string): "url" | "b64_json" {
   return "url"
 }
 
-function pickImageSize(format: "url" | "b64_json"): "256x256" | "512x512" {
-  return format === "b64_json" ? "256x256" : "512x512"
+function pickImageSize(format: "url" | "b64_json"): "256x256" | "512x512" | "1792x1024" {
+  return format === "b64_json" ? "256x256" : "1792x1024"
 }
 
 export async function generateVerseImage(verseText: string) {
