@@ -25,6 +25,12 @@ export type PlanDay = {
 // Obtener todos los planes (con estado del usuario si existe)
 export async function getReadingPlansAction(userId?: string) {
   try {
+    // 1. Verificar si existen planes, si no, ejecutar seed
+    const count = await sql`SELECT COUNT(*) FROM reading_plans`
+    if (Number(count[0].count) === 0) {
+      await seedPlans()
+    }
+
     const plans = await sql`
       SELECT 
         rp.*,
@@ -46,6 +52,49 @@ export async function getReadingPlansAction(userId?: string) {
     return { success: false, error: "Failed to fetch plans" }
   }
 }
+
+async function seedPlans() {
+  try {
+      // 1. Biblia en un Año
+      const plan1 = await sql`
+        INSERT INTO reading_plans (title, description, duration_days, category, image_gradient)
+        VALUES ('Biblia en un Año', 'Lee toda la Biblia en 365 días con pasajes del Antiguo y Nuevo Testamento diariamente.', 365, 'biblia_completa', 'bg-gradient-to-br from-blue-500/20 to-purple-500/20')
+        RETURNING id
+      `;
+      // Insertar días de ejemplo para Plan 1 (simplificado para demo)
+      for (let i = 1; i <= 365; i++) {
+         await sql`INSERT INTO reading_plan_days (plan_id, day_number, readings) VALUES (${plan1[0].id}, ${i}, '[{"book": "Génesis", "chapters": [1]}]')`; 
+      }
+
+      // 2. Nuevo Testamento en 90 días
+      const plan2 = await sql`
+        INSERT INTO reading_plans (title, description, duration_days, category, image_gradient)
+        VALUES ('Nuevo Testamento', 'Un recorrido profundo por la vida de Jesús y la iglesia primitiva.', 90, 'nuevo_testamento', 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20')
+        RETURNING id
+      `;
+      // Días ejemplo
+      for (let i = 1; i <= 90; i++) {
+        await sql`INSERT INTO reading_plan_days (plan_id, day_number, readings) VALUES (${plan2[0].id}, ${i}, '[{"book": "Mateo", "chapters": [1]}]')`; 
+      }
+      
+       // 3. Salmos y Proverbios
+      await sql`
+        INSERT INTO reading_plans (title, description, duration_days, category, image_gradient)
+        VALUES ('Salmos y Proverbios', 'Sabiduría diaria y alabanza para fortalecer tu espíritu.', 30, 'tematico', 'bg-gradient-to-br from-amber-500/20 to-orange-500/20')
+      `;
+
+      // 4. Evangelios Sinópticos
+      await sql`
+        INSERT INTO reading_plans (title, description, duration_days, category, image_gradient)
+        VALUES ('Evangelios Sinópticos', 'Estudio comparativo de Mateo, Marcos y Lucas.', 45, 'tematico', 'bg-gradient-to-br from-indigo-500/20 to-cyan-500/20')
+      `;
+      
+      console.log('Seeded default reading plans');
+  } catch (e) {
+    console.error("Error seeding plans:", e)
+  }
+}
+
 
 // Unirse a un plan
 export async function joinReadingPlanAction(userId: string, planId: number) {
